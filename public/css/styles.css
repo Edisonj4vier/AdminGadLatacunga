@@ -1,0 +1,292 @@
+/* Importar fuentes */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+
+/* Variables de colores */
+:root {
+    --primary-color: #0067b2; /* Azul principal */
+    --secondary-color: #e31e24; /* Rojo */
+    --accent-color: #ffd700; /* Amarillo */
+    --text-color: #333333;
+    --light-gray: #f4f4f4;
+    --white: #ffffff;
+}
+
+/* Estilos generales */
+body {
+    font-family: 'Roboto', sans-serif;
+    color: var(--text-color);
+    background-image: url('../images/gad.jpg');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+}
+
+/* Navbar */
+.navbar-custom {
+    background-color: var(--primary-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+    top: 0;
+}
+
+.navbar-custom .navbar-brand,
+.navbar-custom .nav-link {
+    color: var(--white);
+    font-weight: 700;
+}
+
+.navbar-custom .nav-link:hover {
+    color: var(--accent-color);
+}
+
+/* Content wrapper */
+.content-wrapper {
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    margin-top: 100px;
+    margin-bottom: 60px;
+}
+
+/* Encabezados */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+/* Formularios */
+.form-label {
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.form-control, .form-select {
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(0, 103, 178, 0.25);
+}
+
+/* Botones */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    font-weight: 700;
+}
+
+.btn-primary:hover {
+    background-color: #005091;
+    border-color: #005091;
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: var(--white);
+    font-weight: 700;
+}
+
+.btn-secondary:hover {
+    background-color: #c4181e;
+    border-color: #c4181e;
+}
+
+/* Tablas */
+.table {
+    background-color: var(--white);
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.table thead {
+    background-color: var(--primary-color);
+    color: var(--white);
+    font-weight: 700;
+}
+
+.table-hover tbody tr:hover {
+    background-color: var(--light-gray);
+}
+
+/* Footer */
+.footer {
+    background-color: var(--primary-color);
+    color: var(--white);
+    text-align: center;
+    padding: 15px 0;
+    bottom: 0;
+    width: 100%;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+    font-weight: 300;
+    margin-top: auto;
+    flex-shrink: 0;
+    z-index: 1000;
+    position: fixed;
+}
+
+/* Select2 personalización */
+.select2-container--default .select2-selection--single {
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    height: 38px;
+    line-height: 38px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 36px;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--primary-color);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .content-wrapper {
+        padding: 20px;
+        margin-top: 20px;
+    }
+
+    .table-responsive {
+        border: none;
+    }
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+
+
+/* Accesibilidad */
+.btn, .form-control, .form-select {
+    transition: all 0.3s ease;
+}
+
+.btn:focus, .form-control:focus, .form-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(0, 103, 178, 0.25);
+}
+
+/* Alertas */
+.alert {
+    border-radius: 5px;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-weight: 400;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+/* Estilos para la paginación */
+.pagination {
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.page-item:not(:first-child) .page-link {
+    margin-left: 5px;
+}
+
+.page-link {
+    color: var(--primary-color);
+    background-color: var(--white);
+    border: 1px solid var(--primary-color);
+    border-radius: 5px;
+    padding: 0.5rem 0.75rem;
+    font-weight: 700;
+    transition: all 0.3s ease;
+}
+
+.page-link:hover {
+    color: var(--white);
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.page-item.active .page-link {
+    color: var(--white);
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.page-item.disabled .page-link {
+    color: #6c757d;
+    background-color: var(--white);
+    border-color: #dee2e6;
+}
+
+/* Animación para los botones de paginación */
+.page-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Accesibilidad para los botones de paginación */
+.page-link:focus {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(0, 103, 178, 0.25);
+}
+
+.table th, .table td {
+    vertical-align: middle;
+}
+/* Estilos para el sidebar */
+
+@media (max-width: 768px) {
+    .sidebar {
+        margin-left: -250px;
+    }
+
+    #content {
+        margin-left: 0;
+    }
+}
+
+/* Clase para cuando el sidebar está oculto */
+body.sidebar-collapsed .sidebar {
+    margin-left: -250px;
+}
+
+body.sidebar-collapsed #content {
+    margin-left: 0;
+}
+#sidebarCollapse {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    #sidebarCollapse {
+        display: block;
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 1031;
+        background-color: var(--primary-color);
+        color: var(--white);
+        border: none;
+        border-radius: 4px;
+        padding: 5px 10px;
+    }
+}
+@media (min-width: 769px) {
+    .footer {
+        padding-left: 250px;
+    }
+}
