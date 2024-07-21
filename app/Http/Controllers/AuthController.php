@@ -32,19 +32,40 @@ class AuthController extends Controller
             if ($response->successful()) {
                 $data = $response->json();
                 Session::put('access_token', $data['access_token']);
-                Session::put('user_id', $data['user_id']);
+                Session::put('username', $data['username']);
+                Session::put('token_type', $data['token_type']);
                 return redirect()->route('app-lector-ruta.index')->with('success', 'Inicio de sesión exitoso');
             } else {
                 return back()->withErrors(['error' => 'Credenciales incorrectas']);
             }
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al conectar con el servidor']);
+            return back()->withErrors(['error' => 'Error al conectar con el servidor: ' . $e->getMessage()]);
         }
     }
 
     public function logout()
     {
-        Session::forget(['access_token', 'user_id']);
+        Session::forget(['access_token', 'username', 'token_type']);
         return redirect()->route('login')->with('success', 'Sesión cerrada');
+    }
+
+    public function getUser()
+    {
+        if (!Session::has('access_token')) {
+            return response()->json(['error' => 'No autenticado'], 401);
+        }
+
+        try {
+            $response = Http::withToken(Session::get('access_token'))
+                ->get(config('services.api.url') . '/user/');
+
+            if ($response->successful()) {
+                return response()->json($response->json());
+            } else {
+                return response()->json(['error' => 'Error al obtener información del usuario'], $response->status());
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al conectar con el servidor: ' . $e->getMessage()], 500);
+        }
     }
 }

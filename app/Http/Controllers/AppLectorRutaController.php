@@ -15,7 +15,7 @@ class AppLectorRutaController extends Controller
 
             // Implementar paginación manual
             $page = $request->input('page', 1);
-            $perPage = 5; // Puedes ajustar este número según tus necesidades
+            $perPage = 5;
             $total = count($appLectorRutas);
 
             $paginatedItems = array_slice($appLectorRutas, ($page - 1) * $perPage, $perPage);
@@ -46,25 +46,24 @@ class AppLectorRutaController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'id_usuario' => 'required',
-            'id_ruta' => 'required',
+            'username' => 'required',
+            'ruta_id' => 'required|integer',
         ]);
 
         try {
             $response = ApiHelper::request('post', '/asignarRuta/', [
-                'usuario_id' => $request->id_usuario,
-                'ruta_id' => $request->id_ruta,
+                'username' => $request->username,
+                'ruta_id' => $request->ruta_id,
             ]);
 
             $data = $response->json();
 
             if ($response->successful()) {
-                // Verificar si el mensaje indica una asignación existente
                 if (strpos($data['mensaje'], 'ya está asignada') !== false) {
                     return response()->json([
                         'success' => false,
                         'message' => $data['mensaje']
-                    ], 409); // Código 409 Conflict
+                    ], 409);
                 }
 
                 return response()->json([
@@ -84,10 +83,11 @@ class AppLectorRutaController extends Controller
             ], 500);
         }
     }
-    public function destroy($id)
+
+    public function destroy($username, $id_ruta)
     {
         try {
-            $response = ApiHelper::request('delete', "/lectorruta/{$id}");
+            $response = ApiHelper::request('delete', "/lectorruta/{$username}/{$id_ruta}");
 
             if ($response->successful()) {
                 return response()->json([
@@ -108,12 +108,27 @@ class AppLectorRutaController extends Controller
         }
     }
 
-    public function edit($id)
+    public function edit($username, $id_ruta)
     {
         try {
-            $appLectorRuta = ApiHelper::request('get', "/lectorruta/{$id}")->json();
+            $appLectorRuta = ApiHelper::request('get', "/lectorruta/{$username}/{$id_ruta}")->json();
             $usuarios = ApiHelper::request('get', '/obtenerUsuarios/')->json();
             $rutas = ApiHelper::request('get', '/obtenerRutas/')->json();
+
+            // Depuración
+            \Log::info('appLectorRuta:', $appLectorRuta);
+            \Log::info('usuarios:', $usuarios);
+            \Log::info('rutas:', $rutas);
+
+            // Asegurarse de que 'login' esté presente en appLectorRuta
+            if (!isset($appLectorRuta['login'])) {
+                $appLectorRuta['login'] = $username;
+            }
+
+            // Asegurarse de que 'id' esté presente en appLectorRuta para la ruta
+            if (!isset($appLectorRuta['id'])) {
+                $appLectorRuta['id'] = $id_ruta;
+            }
 
             return response()->json([
                 'appLectorRuta' => $appLectorRuta,
@@ -121,6 +136,7 @@ class AppLectorRutaController extends Controller
                 'rutas' => $rutas
             ]);
         } catch (\Exception $e) {
+            \Log::error('Error en edit:', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
@@ -128,17 +144,17 @@ class AppLectorRutaController extends Controller
         }
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $username, $id_ruta)
     {
         $request->validate([
-            'id_usuario' => 'required|integer',
-            'id_ruta' => 'required|integer',
+            'new_username' => 'required',
+            'new_id_ruta' => 'required|integer',
         ]);
 
         try {
-            $response = ApiHelper::request('put', "/lectorruta/{$id}", [
-                'usuario_id' => $request->id_usuario,
-                'ruta_id' => $request->id_ruta,
+            $response = ApiHelper::request('put', "/lectorruta/{$username}/{$id_ruta}", [
+                'new_username' => $request->new_username,
+                'new_id_ruta' => $request->new_id_ruta,
             ]);
 
             if ($response->successful()) {
@@ -160,5 +176,4 @@ class AppLectorRutaController extends Controller
             ], 500);
         }
     }
-
 }

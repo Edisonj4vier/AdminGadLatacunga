@@ -5,17 +5,17 @@
     <form id="form-agregar-editar" action="{{ route('app-lector-ruta.store') }}" method="POST" class="mb-4">
         @csrf
         <div class="mb-3">
-            <label for="id_usuario" class="form-label">Lector</label>
-            <select class="form-select select2" id="id_usuario" name="id_usuario">
+            <label for="username" class="form-label">Lector</label>
+            <select class="form-select select2" id="username" name="username">
                 <option value="">Seleccione Lector</option>
                 @foreach ($usuarios as $usuario)
-                    <option value="{{ $usuario['id'] }}">{{ $usuario['nombre_usuario'] }}</option>
+                    <option value="{{ $usuario['login'] }}">{{ $usuario['login'] }}</option>
                 @endforeach
             </select>
         </div>
         <div class="mb-3">
-            <label for="id_ruta" class="form-label">Ruta</label>
-            <select class="form-select select2" id="id_ruta" name="id_ruta">
+            <label for="ruta_id" class="form-label">Ruta</label>
+            <select class="form-select select2" id="ruta_id" name="ruta_id">
                 <option value="">Seleccione Ruta</option>
                 @foreach ($rutas as $ruta)
                     <option value="{{ $ruta['id'] }}">{{ $ruta['nombreruta'] }}</option>

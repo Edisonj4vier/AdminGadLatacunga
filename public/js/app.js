@@ -11,15 +11,15 @@ $(document).ready(function() {
         const form = $(this);
         const url = form.attr('action');
         const method = form.attr('method');
-        const idUsuario = $('#id_usuario').val();
-        const idRuta = $('#id_ruta').val();
+        const username = $('#username').val();
+        const rutaId = $('#ruta_id').val();
 
         // Validación de campos
-        if (!idUsuario || !idRuta) {
+        if (!username || !rutaId) {
             let errorMessage = '';
-            if (!idUsuario && !idRuta) {
+            if (!username && !rutaId) {
                 errorMessage = 'Por favor, seleccione un lector y una ruta.';
-            } else if (!idUsuario) {
+            } else if (!username) {
                 errorMessage = 'Por favor, seleccione un lector.';
             } else {
                 errorMessage = 'Por favor, seleccione una ruta.';
@@ -46,7 +46,7 @@ $(document).ready(function() {
                         if (result.isConfirmed) {
                             actualizarTabla();
                             form[0].reset();
-                            $('#id_usuario, #id_ruta').val(null).trigger('change'); // Para Select2
+                            $('#username, #ruta_id').val(null).trigger('change'); // Para Select2
                         }
                     });
                 } else {
@@ -146,40 +146,44 @@ function initializeEvents() {
 
 // Manejo del formulario de edición
 $(document).on('click', '#appLectorRutaTable .edit-btn', function() {
-    const id = $(this).data('id');
+    const username = $(this).data('username');
+    const rutaId = $(this).data('ruta-id');
     $.ajax({
-        url: `/app-lector-ruta/${id}/edit`,
+        url: `/app-lector-ruta/${username}/${rutaId}/edit`,
         method: 'GET',
         success: function(data) {
+            console.log('Datos recibidos:', data); // Depuración
             if (data.appLectorRuta && data.usuarios && data.rutas) {
                 const appLectorRuta = data.appLectorRuta;
                 const usuarios = data.usuarios;
                 const rutas = data.rutas;
 
                 // Poblar el select de usuarios
-                $('#edit_id_usuario').empty().append('<option value="">Seleccione Lector</option>');
+                $('#edit_new_username').empty().append('<option value="">Seleccione Lector</option>');
                 usuarios.forEach(usuario => {
-                    $('#edit_id_usuario').append(`<option value="${usuario.id}">${usuario.nombre_usuario}</option>`);
+                    $('#edit_new_username').append(`<option value="${usuario.login}">${usuario.login}</option>`);
                 });
 
                 // Poblar el select de rutas
-                $('#edit_id_ruta').empty().append('<option value="">Seleccione Ruta</option>');
+                $('#edit_new_id_ruta').empty().append('<option value="">Seleccione Ruta</option>');
                 rutas.forEach(ruta => {
-                    $('#edit_id_ruta').append(`<option value="${ruta.id}">${ruta.nombreruta}</option>`);
+                    $('#edit_new_id_ruta').append(`<option value="${ruta.id}">${ruta.nombreruta}</option>`);
                 });
 
                 // Establecer los valores seleccionados
-                $('#edit_id_usuario').val(appLectorRuta.idusuario).trigger('change');
-                $('#edit_id_ruta').val(appLectorRuta.idruta).trigger('change');
+                const selectedUsername = appLectorRuta.login || username;
+                const selectedRutaId = appLectorRuta.id || rutaId;
 
-                // Actualizar la acción del formulario con el ID correcto
-                $('#editForm').attr('action', $('#editForm').attr('action').replace(':id', id));
+                $('#edit_new_username').val(selectedUsername).trigger('change');
+                $('#edit_new_id_ruta').val(selectedRutaId).trigger('change');
+
+                // Actualizar la acción del formulario
+                $('#editForm').attr('action', $('#editForm').attr('action').replace(':username', username).replace(':id_ruta', rutaId));
 
                 // Mostrar el modal
                 $('#editionModal').modal('show');
             } else {
-                console.error('Datos incompletos recibidos del servidor');
-                // Manejar el error...
+                console.error('Datos incompletos recibidos del servidor:', data);
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -188,6 +192,7 @@ $(document).on('click', '#appLectorRutaTable .edit-btn', function() {
             }
         },
         error: function(xhr) {
+            console.error('Error en la solicitud AJAX:', xhr);
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -248,8 +253,9 @@ $('#editForm').on('submit', function(e) {
 // Manejo del formulario de eliminación
 $(document).on('click', '.delete-btn', function(e) {
     e.preventDefault();
-    const id = $(this).data('id');
-    const url = `/app-lector-ruta/${id}`;
+    const username = $(this).data('username');
+    const rutaId = $(this).data('ruta-id');
+    const url = `/app-lector-ruta/${username}/${rutaId}`;
 
     Swal.fire({
         title: '¿Está seguro?',

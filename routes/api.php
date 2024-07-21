@@ -20,8 +20,3 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::get('/consumos', [ConsumoLecturaController::class, 'index']);
 Route::get('/consumos/{cuenta}', [ConsumoLecturaController::class, 'show']);
-
-
-Route::get('/test-referrer-policy', function () {
-    return response()->json(['message' => 'Referrer Policy is set to strict-origin-when-cross-origin']);
-});
