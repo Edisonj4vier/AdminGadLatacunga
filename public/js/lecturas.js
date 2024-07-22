@@ -7,6 +7,7 @@ $(document).ready(function() {
     setupSearch();
     loadInitialData();
 
+
     function initializeEvents() {
         $('#rangoUnidades').change(loadInitialData);
         $('#perPage').change(() => filterAndDisplayData());
@@ -15,6 +16,7 @@ $(document).ready(function() {
         $(document).on('click', '#lecturasTable .edit-btn', handleEdit);
         $(document).on('click', '#lecturasTable .delete-btn', handleDelete);
         $(document).on('click', '#lecturasTable .show-details-btn', handleShowDetails);
+        $('#editForm').on('submit', handleEditSubmit);
     }
 
     function setupSearch() {
@@ -23,37 +25,38 @@ $(document).ready(function() {
             typingTimer = setTimeout(() => filterAndDisplayData(), TYPING_TIMER);
         });
     }
-
     function loadInitialData() {
         const rangoUnidades = $('#rangoUnidades').val();
+        const fechaConsulta = $('#fechaConsulta').val();
+        const searchTerm = $('#searchInput').val();
+        const perPage = $('#perPage').val();
 
-        $.ajax({
-            url: '/lecturas',
-            method: 'GET',
-            data: {
-                rango_unidades: rangoUnidades
+        showLoadingMessage();
+
+        ajaxRequest('/lecturas', 'GET',
+            {
+                rango_unidades: rangoUnidades,
+                fecha_consulta: fechaConsulta,
+                search: searchTerm,
+                per_page: perPage
             },
-            success: function(response) {
+            function(response) {
+                hideLoadingMessage();
                 if (response.error) {
                     showErrorAlert('Error: ' + response.error);
                 } else {
-                    // Asegurarse de que allData sea siempre un array
-                    allData = Array.isArray(response) ? response : (response.data || []);
-                    filterAndDisplayData();
+                    updateTableContent(response.data);
+                    updatePagination(response.pagination);
                 }
             },
-            error: function(xhr, status, error) {
-                showErrorAlert('Error al cargar los datos. Por favor, intenta de nuevo.');
+            function(xhr) {
+                hideLoadingMessage();
+                showErrorAlert('Error al cargar los datos: ' + (xhr.responseJSON?.error || 'Error desconocido'));
             }
-        });
+        );
     }
 
-    function filterAndDisplayData(page = 1) {
-        if (!Array.isArray(allData)) {
-            showErrorAlert('Error en los datos. Por favor, recarga la página.');
-            return;
-        }
-
+    function filterAndDisplayData(page = 1, paginationData = null) {
         const searchTerm = $('#searchInput').val().toLowerCase();
         const perPage = parseInt($('#perPage').val());
 
@@ -63,19 +66,24 @@ $(document).ready(function() {
             )
         );
 
-        const totalPages = Math.ceil(filteredData.length / perPage);
-        page = Math.min(Math.max(1, page), totalPages || 1);
+        if (paginationData) {
+            updateTableContent(filteredData.slice(0, perPage));
+            updatePagination(paginationData);
+        } else {
+            const totalPages = Math.ceil(filteredData.length / perPage);
+            page = Math.min(Math.max(1, page), totalPages || 1);
 
-        const startIndex = (page - 1) * perPage;
-        const paginatedData = filteredData.slice(startIndex, startIndex + perPage);
+            const startIndex = (page - 1) * perPage;
+            const paginatedData = filteredData.slice(startIndex, startIndex + perPage);
 
-        updateTableContent(paginatedData);
-        updatePagination({
-            current_page: page,
-            last_page: totalPages,
-            total: filteredData.length,
-            per_page: perPage
-        });
+            updateTableContent(paginatedData);
+            updatePagination({
+                current_page: page,
+                last_page: totalPages,
+                total: filteredData.length,
+                per_page: perPage
+            });
+        }
     }
 
     function updateTableContent(lecturas) {
@@ -98,16 +106,16 @@ $(document).ready(function() {
                 <td>${lectura.clave}</td>
                 <td>${lectura.abonado || ''}</td>
                 <td>${lectura.ruta || ''}</td>
-                <td class="text-end">${Number(lectura.lectura_actual).toLocaleString()}</td>
-                <td class="text-end">${Number(lectura.lectura_aplectura|| 0).toLocaleString()}</td>
-                <td class="text-end">${Number(lectura.diferencia || 0).toLocaleString()}</td>
-                <td class="text-end">${Number(lectura.promedio || 0).toFixed(2)}</td>
+                <td class="text-end">${lectura.lectura_actual}</td>
+                <td class="text-end">${lectura.lectura_aplectura}</td>
+                <td class="text-end">${lectura.diferencia}</td>
+                <td class="text-end">${lectura.promedio}</td>
                 <td>${getConsumoIndicator(lectura)}</td>
                 <td>${lectura.coordenadas || ''}</td>
+                <td>${lectura.observacion_movil || ''}</td>
                 <td>
                     <button class="btn btn-sm btn-info show-details-btn" data-bs-toggle="modal" data-bs-target="#detallesModal"
-                            data-imagen="${lectura.imagen || ''}" data-motivo="${lectura.motivo || ''}"
-                            data-observacion="${lectura.observacion || ''}">
+                            data-imagen="${lectura.imagen || ''}" data-motivo="${lectura.motivo || ''}" data-observacion="${lectura.observacion_movil || ''}">
                         <i class="fas fa-info-circle"></i> Detalles
                     </button>
                 </td>
@@ -118,19 +126,15 @@ $(document).ready(function() {
     }
 
     function getConsumoIndicator(lectura) {
-        const consumo = lectura.diferencia || 0;
-        const rangoSuperior = lectura.rango_superior || 0;
-        const rangoInferior = lectura.rango_inferior || 0;
-
-        if (consumo > rangoSuperior) {
-            return '<span class="badge bg-danger">Alto consumo</span>';
-        } else if (consumo < rangoInferior) {
-            return '<span class="badge bg-warning">Bajo consumo</span>';
-        } else {
-            return '<span class="badge bg-success">Consumo normal</span>';
+        switch(lectura.indicador) {
+            case 'Alto':
+                return '<span class="badge bg-danger">Alto consumo</span>';
+            case 'Bajo':
+                return '<span class="badge bg-warning">Bajo consumo</span>';
+            default:
+                return '<span class="badge bg-success">Consumo normal</span>';
         }
     }
-
     function updatePagination(paginationData) {
         let paginationHtml = '';
         if (paginationData.last_page > 1) {
@@ -165,37 +169,29 @@ $(document).ready(function() {
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
-                $.ajax({
-                    url: '/lecturas/sincronizar',
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                ajaxRequest('/lecturas/sincronizar', 'POST', null,
+                    function(response) {
+                        Swal.fire('Sincronizado!', 'Los datos han sido sincronizados.', 'success');
+                        loadInitialData();
                     },
-                    success: function(response) {
-                        Swal.fire(
-                            'Sincronizado!',
-                            'Los datos han sido sincronizados.',
-                            'success'
-                        );
-                        actualizarLecturas();
-                    },
-                    error: function(xhr) {
-                        showErrorAlert('Error al sincronizar los datos: ' + xhr.responseJSON.error);
+                    function(xhr) {
+                        showErrorAlert('Error al sincronizar los datos: ' + (xhr.responseJSON?.error || 'Error desconocido'));
                     }
-                });
+                );
             }
         });
     }
-
     function handleEdit() {
         const cuenta = $(this).data('id');
-        $.ajax({
-            url: `/lecturas/${cuenta}`,
-            method: 'GET',
-            success: function(response) {
+        showLoadingMessage('Cargando datos...');
+
+        ajaxRequest(`/lecturas/${cuenta}/edit`, 'GET', null,
+            function(response) {
+                hideLoadingMessage();
+                console.log('Respuesta del servidor:', response);
                 if (response && response.cuenta) {
                     $('#editCuenta').val(response.cuenta);
-                    $('#editLectura').val(response.lectura_actual);
+                    $('#editLectura').val(response.lectura);
                     $('#editObservacion').val(response.observacion_movil);
                     $('#editMotivo').val(response.motivo);
                     $('#editModal').modal('show');
@@ -204,39 +200,74 @@ $(document).ready(function() {
                     showErrorAlert('Datos incompletos recibidos del servidor.');
                 }
             },
-            error: function(xhr) {
-                showErrorAlert('Error al cargar los datos para editar.');
+            function(xhr, status, error) {
+                hideLoadingMessage();
+                console.error('Error en la solicitud AJAX:', status, error);
+                console.error('Respuesta del servidor:', xhr.responseText);
+                let errorMessage = `Error al cargar los datos para editar. Estado: ${xhr.status}`;
+                if (xhr.responseJSON && xhr.responseJSON.detail) {
+                    errorMessage += `. Detalle: ${xhr.responseJSON.detail}`;
+                }
+                showErrorAlert(errorMessage);
             }
-        });
+        );
     }
 
-    $('#saveEdit').click(function() {
+    function handleEditSubmit(e) {
+        e.preventDefault();
         const cuenta = $('#editCuenta').val();
         const nuevaLectura = $('#editLectura').val();
         const nuevaObservacion = $('#editObservacion').val();
         const nuevoMotivo = $('#editMotivo').val();
 
-        $.ajax({
-            url: `/lecturas/${cuenta}`,
-            method: 'PUT',
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            data: {
+        if (!validateEditForm()) {
+            return;
+        }
+
+        ajaxRequest(`/lecturas/${cuenta}`, 'PUT',
+            {
                 nueva_lectura: nuevaLectura,
                 nueva_observacion: nuevaObservacion,
                 nuevo_motivo: nuevoMotivo
             },
-            success: function(response) {
+            function(response) {
                 $('#editModal').modal('hide');
                 Swal.fire('Actualizado!', 'El registro ha sido actualizado.', 'success');
-                actualizarLecturas();
+                loadInitialData();
             },
-            error: function(xhr) {
+            function(xhr) {
                 showErrorAlert('Error al actualizar el registro: ' + (xhr.responseJSON?.error || 'Error desconocido'));
             }
-        });
-    });
+        );
+    }
+
+    function validateEditForm() {
+        let isValid = true;
+        $('.is-invalid').removeClass('is-invalid');
+
+        const lectura = $('#editLectura').val();
+        if (!lectura || isNaN(lectura) || parseFloat(lectura) < 0) {
+            $('#editLectura').addClass('is-invalid');
+            $('#lecturaFeedback').text('Por favor, ingrese una lectura válida.');
+            isValid = false;
+        }
+
+        const observacion = $('#editObservacion').val();
+        if (observacion.length > 255) {
+            $('#editObservacion').addClass('is-invalid');
+            $('#observacionFeedback').text('La observación no puede exceder los 255 caracteres.');
+            isValid = false;
+        }
+
+        const motivo = $('#editMotivo').val();
+        if (motivo.length > 100) {
+            $('#editMotivo').addClass('is-invalid');
+            $('#motivoFeedback').text('El motivo no puede exceder los 100 caracteres.');
+            isValid = false;
+        }
+
+        return isValid;
+    }
 
     function handleDelete() {
         const cuenta = $(this).data('id');
@@ -251,28 +282,22 @@ $(document).ready(function() {
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
-                $.ajax({
-                    url: `/lecturas/${cuenta}`,
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    success: function(response) {
+                ajaxRequest(`/lecturas/${cuenta}`, 'DELETE', null,
+                    function(response) {
                         Swal.fire(
                             'Eliminado!',
                             'El registro ha sido eliminado.',
                             'success'
                         );
-                        actualizarLecturas();
+                        loadInitialData();
                     },
-                    error: function(xhr) {
-                        showErrorAlert('Error al eliminar el registro.');
+                    function(xhr) {
+                        showErrorAlert('Error al eliminar el registro: ' + (xhr.responseJSON?.error || 'Error desconocido'));
                     }
-                });
+                );
             }
         });
     }
-
     function handleShowDetails() {
         let imagen = $(this).data('imagen');
         let motivo = $(this).data('motivo');
@@ -290,11 +315,42 @@ $(document).ready(function() {
         $('#modalObservacion').text(observacion || 'No especificado');
     }
 
+    // Agregar una función para mostrar un mensaje de carga
+    function showLoadingMessage(message) {
+        Swal.fire({
+            title: message || 'Cargando...',
+            didOpen: () => {
+                Swal.showLoading();
+            },
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false
+        });
+    }
+
+    function hideLoadingMessage() {
+        Swal.close();
+    }
+
     function showErrorAlert(message) {
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: message
+            text: message,
+            confirmButtonText: 'Entendido'
+        });
+    }
+
+    function ajaxRequest(url, method, data, successCallback, errorCallback) {
+        $.ajax({
+            url: url,
+            method: method,
+            data: data,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: successCallback,
+            error: errorCallback
         });
     }
 });

@@ -1,5 +1,6 @@
 $(document).ready(function() {
     initializeEvents();
+    setTimeout(setTodayDate, 100);
 
     // Cerrar alertas automáticamente después de 5 segundos
     setTimeout(function() {
@@ -13,6 +14,7 @@ $(document).ready(function() {
         const method = form.attr('method');
         const username = $('#username').val();
         const rutaId = $('#ruta_id').val();
+        const fecha = $('#fecha').val();
 
         // Validación de campos
         if (!username || !rutaId) {
@@ -135,6 +137,18 @@ $(document).ready(function() {
     }
 });
 
+function getTodayLocalDate() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Los meses en JS van de 0 a 11
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function setTodayDate() {
+    const today = getTodayLocalDate();
+    $('#fecha').val(today);
+}
 function initializeEvents() {
     // Inicialización de Select2
     $('.select2').select2({
@@ -142,6 +156,7 @@ function initializeEvents() {
         allowClear: true,
         width: '100%'
     });
+    setTodayDate();
 }
 
 // Manejo del formulario de edición
@@ -171,11 +186,21 @@ $(document).on('click', '#appLectorRutaTable .edit-btn', function() {
                 });
 
                 // Establecer los valores seleccionados
-                const selectedUsername = appLectorRuta.login || username;
-                const selectedRutaId = appLectorRuta.id || rutaId;
+                const selectedUsername = appLectorRuta.login_usuario || username;
+                const selectedRutaId = appLectorRuta.id_ruta || rutaId;
+
+                // Manejar la fecha del endpoint
+                let selectedFecha = '';
+                if (appLectorRuta.fecha) {
+                    // Asumimos que la fecha del endpoint viene en formato ISO
+                    selectedFecha = appLectorRuta.fecha.split('T')[0];
+                }
 
                 $('#edit_new_username').val(selectedUsername).trigger('change');
                 $('#edit_new_id_ruta').val(selectedRutaId).trigger('change');
+                $('#edit_fecha').val(selectedFecha);
+
+                console.log('Fecha establecida en el modal:', selectedFecha); // Depuración
 
                 // Actualizar la acción del formulario
                 $('#editForm').attr('action', $('#editForm').attr('action').replace(':username', username).replace(':id_ruta', rutaId));
@@ -207,7 +232,20 @@ $('#editForm').on('submit', function(e) {
     e.preventDefault();
     const form = $(this);
     const url = form.attr('action');
+
+    // Formatear la fecha antes de enviar
+    const fechaInput = $('#edit_fecha');
+    const fechaOriginal = fechaInput.val();
+    if (fechaOriginal) {
+        const fecha = new Date(fechaOriginal);
+        const fechaFormateada = fecha.toISOString().split('T')[0];
+        fechaInput.val(fechaFormateada);
+    }
+
     const data = form.serialize();
+
+    // Restaurar el valor original del input de fecha
+    fechaInput.val(fechaOriginal);
 
     $.ajax({
         url: url,

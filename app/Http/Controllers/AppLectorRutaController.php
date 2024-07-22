@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Helpers\ApiHelper;
+use Carbon\Carbon;
 
 class AppLectorRutaController extends Controller
 {
@@ -48,24 +49,19 @@ class AppLectorRutaController extends Controller
         $request->validate([
             'username' => 'required',
             'ruta_id' => 'required|integer',
+            'fecha' => 'required|date',
         ]);
 
         try {
             $response = ApiHelper::request('post', '/asignarRuta/', [
                 'username' => $request->username,
                 'ruta_id' => $request->ruta_id,
+                'fecha' => Carbon::parse($request->fecha)->toDateString(),
             ]);
 
             $data = $response->json();
 
             if ($response->successful()) {
-                if (strpos($data['mensaje'], 'ya está asignada') !== false) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => $data['mensaje']
-                    ], 409);
-                }
-
                 return response()->json([
                     'success' => true,
                     'message' => $data['mensaje']
@@ -115,19 +111,11 @@ class AppLectorRutaController extends Controller
             $usuarios = ApiHelper::request('get', '/obtenerUsuarios/')->json();
             $rutas = ApiHelper::request('get', '/obtenerRutas/')->json();
 
-            // Depuración
-            \Log::info('appLectorRuta:', $appLectorRuta);
-            \Log::info('usuarios:', $usuarios);
-            \Log::info('rutas:', $rutas);
-
-            // Asegurarse de que 'login' esté presente en appLectorRuta
-            if (!isset($appLectorRuta['login'])) {
-                $appLectorRuta['login'] = $username;
-            }
-
-            // Asegurarse de que 'id' esté presente en appLectorRuta para la ruta
-            if (!isset($appLectorRuta['id'])) {
-                $appLectorRuta['id'] = $id_ruta;
+            // Asegurarse de que los campos necesarios estén presentes
+            $appLectorRuta['login_usuario'] = $appLectorRuta['login_usuario'] ?? $username;
+            $appLectorRuta['id_ruta'] = $appLectorRuta['id_ruta'] ?? $id_ruta;
+            if (isset($appLectorRuta['fecha'])) {
+                $appLectorRuta['fecha'] = date('Y-m-d', strtotime($appLectorRuta['fecha']));
             }
 
             return response()->json([
@@ -136,7 +124,6 @@ class AppLectorRutaController extends Controller
                 'rutas' => $rutas
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error en edit:', ['message' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
@@ -149,12 +136,14 @@ class AppLectorRutaController extends Controller
         $request->validate([
             'new_username' => 'required',
             'new_id_ruta' => 'required|integer',
+            'fecha' => 'required|date',
         ]);
 
         try {
             $response = ApiHelper::request('put', "/lectorruta/{$username}/{$id_ruta}", [
                 'new_username' => $request->new_username,
                 'new_id_ruta' => $request->new_id_ruta,
+                'fecha' => Carbon::parse($request->fecha)->toDateString(),
             ]);
 
             if ($response->successful()) {
