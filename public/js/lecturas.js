@@ -1,7 +1,7 @@
 $(document).ready(function() {
-    const TYPING_TIMER = 300; // milisegundos
+    const TYPING_TIMER = 300; // milliseconds
     let typingTimer;
-    let allData = []; // Almacenará todos los datos de la API
+    let allData = []; // Will store all data from the API
 
     initializeEvents();
     setupSearch();
@@ -11,7 +11,7 @@ $(document).ready(function() {
         $('#rangoUnidades').change(loadInitialData);
         $('#perPage').change(() => filterAndDisplayData());
         $(document).on('click', '.pagination a', handlePagination);
-        $('#sincronizar').click(handleSincronization);
+        $('#sincronizar').click(handleSyncronization);
         $(document).on('click', '#lecturasTable .edit-btn', handleEdit);
         $(document).on('click', '#lecturasTable .delete-btn', handleDelete);
         $(document).on('click', '#lecturasTable .show-details-btn', handleShowDetails);
@@ -26,19 +26,20 @@ $(document).ready(function() {
 
     function loadInitialData() {
         const rangoUnidades = $('#rangoUnidades').val();
+        const fechaConsulta = $('#fechaConsulta').val(); // Add this line
 
         $.ajax({
             url: '/lecturas',
             method: 'GET',
             data: {
-                rango_unidades: rangoUnidades
+                rango_unidades: rangoUnidades,
+                fecha_consulta: fechaConsulta // Add this line
             },
             success: function(response) {
                 if (response.error) {
                     showErrorAlert('Error: ' + response.error);
                 } else {
-                    // Asegurarse de que allData sea siempre un array
-                    allData = Array.isArray(response) ? response : (response.data || []);
+                    allData = Array.isArray(response.data) ? response.data : [];
                     filterAndDisplayData();
                 }
             },
@@ -99,7 +100,7 @@ $(document).ready(function() {
                 <td>${lectura.abonado || ''}</td>
                 <td>${lectura.ruta || ''}</td>
                 <td class="text-end">${Number(lectura.lectura_actual).toLocaleString()}</td>
-                <td class="text-end">${Number(lectura.lectura_aplectura|| 0).toLocaleString()}</td>
+                <td class="text-end">${Number(lectura.lectura_aplectura || 0).toLocaleString()}</td>
                 <td class="text-end">${Number(lectura.diferencia || 0).toLocaleString()}</td>
                 <td class="text-end">${Number(lectura.promedio || 0).toFixed(2)}</td>
                 <td>${getConsumoIndicator(lectura)}</td>
@@ -107,7 +108,7 @@ $(document).ready(function() {
                 <td>
                     <button class="btn btn-sm btn-info show-details-btn" data-bs-toggle="modal" data-bs-target="#detallesModal"
                             data-imagen="${lectura.imagen || ''}" data-motivo="${lectura.motivo || ''}"
-                            data-observacion="${lectura.observacion || ''}">
+                            data-observacion="${lectura.observacion_movil || ''}">
                         <i class="fas fa-info-circle"></i> Detalles
                     </button>
                 </td>
@@ -153,7 +154,7 @@ $(document).ready(function() {
         filterAndDisplayData(parseInt(page));
     }
 
-    function handleSincronization() {
+    function handleSyncronization() {
         Swal.fire({
             title: '¿Está seguro?',
             text: "Se sincronizarán los datos de lecturas",
@@ -177,7 +178,7 @@ $(document).ready(function() {
                             'Los datos han sido sincronizados.',
                             'success'
                         );
-                        actualizarLecturas();
+                        loadInitialData(); // Change this line
                     },
                     error: function(xhr) {
                         showErrorAlert('Error al sincronizar los datos: ' + xhr.responseJSON.error);
@@ -195,8 +196,8 @@ $(document).ready(function() {
             success: function(response) {
                 if (response && response.cuenta) {
                     $('#editCuenta').val(response.cuenta);
-                    $('#editLectura').val(response.lectura_actual);
-                    $('#editObservacion').val(response.observacion_movil);
+                    $('#editLectura').val(response.lectura);
+                    $('#editObservacion').val(response.observacion);
                     $('#editMotivo').val(response.motivo);
                     $('#editModal').modal('show');
                 } else {
@@ -230,7 +231,7 @@ $(document).ready(function() {
             success: function(response) {
                 $('#editModal').modal('hide');
                 Swal.fire('Actualizado!', 'El registro ha sido actualizado.', 'success');
-                actualizarLecturas();
+                loadInitialData(); // Change this line
             },
             error: function(xhr) {
                 showErrorAlert('Error al actualizar el registro: ' + (xhr.responseJSON?.error || 'Error desconocido'));
@@ -263,7 +264,7 @@ $(document).ready(function() {
                             'El registro ha sido eliminado.',
                             'success'
                         );
-                        actualizarLecturas();
+                        loadInitialData(); // Change this line
                     },
                     error: function(xhr) {
                         showErrorAlert('Error al eliminar el registro.');
@@ -297,4 +298,12 @@ $(document).ready(function() {
             text: message
         });
     }
+
+    $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+    });
+
+    loadInitialData();
 });

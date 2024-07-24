@@ -41,7 +41,7 @@
                 <td class="text-end">{{ number_format($lectura['promedio'] ?? 0, 2, ',', '.') }}</td>
                 <td>
                     @php
-                        $consumo = $lectura['consumo'] ?? 0;
+                        $consumo = $lectura['diferencia'] ?? 0;
                         $rangoSuperior = $lectura['rango_superior'] ?? 0;
                         $rangoInferior = $lectura['rango_inferior'] ?? 0;
                     @endphp
@@ -57,7 +57,7 @@
                 <td>
                     <button class="btn btn-sm btn-info show-details-btn" data-bs-toggle="modal" data-bs-target="#detallesModal"
                             data-imagen="{{ $lectura['imagen'] ?? '' }}" data-motivo="{{ $lectura['motivo'] ?? '' }}"
-                            data-observacion="{{ $lectura['observacion'] ?? '' }}">
+                            data-observacion="{{ $lectura['observacion_movil'] ?? '' }}">
                         <i class="fas fa-info-circle"></i> Detalles
                     </button>
                 </td>

@@ -21,6 +21,10 @@
                             <option value="">Seleccione Ruta</option>
                         </select>
                     </div>
+                    <div class="mb-3">
+                        <label for="edit_fecha" class="form-label">Fecha de Asignación</label>
+                        <input type="date" class="form-control" id="edit_fecha" name="fecha" required>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>

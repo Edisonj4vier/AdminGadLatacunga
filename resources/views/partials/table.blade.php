@@ -5,6 +5,7 @@
         <th>Eliminar</th>
         <th>Lector</th>
         <th>Ruta</th>
+        <th>Fecha de Asignación</th>
     </tr>
     </thead>
     <tbody>
@@ -13,7 +14,8 @@
             <td class="table-actions">
                 <button type="button" class="btn btn-warning btn-sm edit-btn"
                         data-username="{{ $appLectorRuta['login_usuario'] }}"
-                        data-ruta-id="{{ $appLectorRuta['id_ruta'] }}">Editar</button>
+                        data-ruta-id="{{ $appLectorRuta['id_ruta'] }}"
+                        data-fecha="{{ $appLectorRuta['fecha'] }}">Editar</button>
             </td>
             <td class="table-actions">
                 <button type="button" class="btn btn-danger btn-sm delete-btn"
@@ -22,6 +24,7 @@
             </td>
             <td>{{ $appLectorRuta['nombre_usuario'] }}</td>
             <td>{{ $appLectorRuta['nombre_ruta']}}</td>
+            <td>{{ \Carbon\Carbon::parse($appLectorRuta['fecha'])->format('d/m/Y') }}</td>
         </tr>
     @endforeach
     </tbody>

@@ -47,6 +47,11 @@
                         Registro de lecturas
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        Configuración
+                    </a>
+                </li>
                 <li class="nav-item mt-auto">
                     <form action="{{ route('logout') }}" method="POST" class="d-inline">
                         @csrf

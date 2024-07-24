@@ -18,7 +18,7 @@ class ConsumoLecturaController extends Controller
             $perPage = $request->input('per_page', 15);
 
             $response = ApiHelper::request('get', '/lecturas', [
-                'fecha_consulta' => $request->input('fecha_consulta', now()->toDateString()),
+                'fecha_consulta' => $request->input('fecha_consulta'),
                 'limite_registros' => $perPage,
                 'rango_unidades' => $request->input('rango_unidades', 2),
             ]);
@@ -56,6 +56,17 @@ class ConsumoLecturaController extends Controller
         }
     }
 
+    public function show($cuenta): JsonResponse
+    {
+        try {
+            $response = ApiHelper::request('get', "/lecturas/{$cuenta}");
+
+            return response()->json($response->json());
+        } catch (\Exception $e) {
+            return $this->handleApiError($e);
+        }
+    }
+
     public function update(Request $request, $cuenta): JsonResponse
     {
         try {
@@ -85,7 +96,7 @@ class ConsumoLecturaController extends Controller
     public function sincronizarLecturas(Request $request): JsonResponse
     {
         try {
-            $response = ApiHelper::request('post', "/sincronizar_lecturas/{$request->login}", $request->lecturas);
+            $response = ApiHelper::request('post', "/sincronizar_lecturas/{$request->login}", ['lecturas' => $request->lecturas]);
 
             return response()->json($response->json());
         } catch (\Exception $e) {
