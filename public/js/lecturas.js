@@ -8,7 +8,7 @@ $(document).ready(function() {
     loadInitialData();
 
     function initializeEvents() {
-        $('#rangoUnidades').change(loadInitialData);
+        $('#saveConfig').click(handleSaveConfig);
         $('#perPage').change(() => filterAndDisplayData());
         $(document).on('click', '.pagination a', handlePagination);
         $('#sincronizar').click(handleSyncronization);
@@ -23,17 +23,20 @@ $(document).ready(function() {
             typingTimer = setTimeout(() => filterAndDisplayData(), TYPING_TIMER);
         });
     }
-
+    function handleSaveConfig() {
+        loadInitialData();
+        $('#configModal').modal('hide');
+    }
     function loadInitialData() {
         const rangoUnidades = $('#rangoUnidades').val();
-        const fechaConsulta = $('#fechaConsulta').val(); // Add this line
+        const fechaConsulta = $('#fechaConsulta').val();
 
         $.ajax({
             url: '/lecturas',
             method: 'GET',
             data: {
                 rango_unidades: rangoUnidades,
-                fecha_consulta: fechaConsulta // Add this line
+                fecha_consulta: fechaConsulta
             },
             success: function(response) {
                 if (response.error) {
@@ -81,39 +84,63 @@ $(document).ready(function() {
 
     function updateTableContent(lecturas) {
         let html = '';
+        let coordenadasCount = {};
+
+        // Primero, contamos las ocurrencias de cada coordenada
         lecturas.forEach(function(lectura) {
+            const coordenadas = lectura.coordenadas || '';
+            if (coordenadas) {
+                coordenadasCount[coordenadas] = (coordenadasCount[coordenadas] || 0) + 1;
+            }
+        });
+
+        lecturas.forEach(function(lectura) {
+            const imagen = lectura.imagen || (lectura.imagen && lectura.imagen.imagen) || '';
+            const motivo = lectura.motivo || (lectura.motivo && lectura.motivo.motivo) || '';
+            const coordenadas = lectura.coordenadas || '';
+
+            // Determinar el estilo de la fila basado en las coordenadas
+            let rowStyle = '';
+            if (coordenadas && coordenadasCount[coordenadas] > 1) {
+                rowStyle = 'background-color: #FFF9C4;'; // Color pastel amarillo suave
+            }
+
             html += `
-            <tr>
-                <td class="text-center">
-                    <div class="btn-group" role="group" aria-label="Acciones">
-                        <button class="btn btn-sm btn-warning edit-btn" data-id="${lectura.cuenta}" title="Modificar">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger delete-btn" data-id="${lectura.cuenta}" title="Eliminar">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </div>
-                </td>
-                <td>${lectura.cuenta}</td>
-                <td>${lectura.medidor}</td>
-                <td>${lectura.clave}</td>
-                <td>${lectura.abonado || ''}</td>
-                <td>${lectura.ruta || ''}</td>
-                <td class="text-end">${Number(lectura.lectura_actual).toLocaleString()}</td>
-                <td class="text-end">${Number(lectura.lectura_aplectura || 0).toLocaleString()}</td>
-                <td class="text-end">${Number(lectura.diferencia || 0).toLocaleString()}</td>
-                <td class="text-end">${Number(lectura.promedio || 0).toFixed(2)}</td>
-                <td>${getConsumoIndicator(lectura)}</td>
-                <td>${lectura.coordenadas || ''}</td>
-                <td>
-                    <button class="btn btn-sm btn-info show-details-btn" data-bs-toggle="modal" data-bs-target="#detallesModal"
-                            data-imagen="${lectura.imagen || ''}" data-motivo="${lectura.motivo || ''}"
-                            data-observacion="${lectura.observacion_movil || ''}">
-                        <i class="fas fa-info-circle"></i> Detalles
+        <tr style="${rowStyle}">
+            <td class="text-center">
+                <div class="btn-group" role="group" aria-label="Acciones">
+                    <button class="btn btn-sm btn-warning edit-btn" data-id="${lectura.cuenta}" title="Modificar">
+                        <i class="fas fa-edit"></i>
                     </button>
-                </td>
-            </tr>
-        `;
+                    <button class="btn btn-sm btn-danger delete-btn" data-id="${lectura.cuenta}" title="Eliminar">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </td>
+            <td>${lectura.cuenta}</td>
+            <td>${lectura.medidor}</td>
+            <td>${lectura.clave}</td>
+            <td>${lectura.abonado || ''}</td>
+            <td>${lectura.ruta || ''}</td>
+            <td class="text-end">${lectura.lectura_actual}</td>
+            <td class="text-end">${lectura.lectura_aplectura}</td>
+            <td class="text-end">${lectura.diferencia}</td>
+            <td class="text-end">${lectura.promedio}</td>
+            <td>${getConsumoIndicator(lectura)}</td>
+            <td>${coordenadas}</td>
+            <td>${lectura.observacion_movil || ''}</td>
+            <td>
+                <button class="btn btn-sm btn-info show-details-btn"
+                        data-bs-toggle="modal"
+                        data-bs-target="#detallesModal"
+                        data-imagen="${imagen}"
+                        data-motivo="${motivo}"
+                        ${(!imagen || !motivo) ? 'disabled' : ''}>
+                    <i class="fas fa-info-circle"></i> Detalles
+                </button>
+            </td>
+        </tr>
+    `;
         });
         $('#lecturasBody').html(html);
     }
@@ -131,7 +158,6 @@ $(document).ready(function() {
             return '<span class="badge bg-success">Consumo normal</span>';
         }
     }
-
     function updatePagination(paginationData) {
         let paginationHtml = '';
         if (paginationData.last_page > 1) {
@@ -279,16 +305,15 @@ $(document).ready(function() {
         let motivo = $(this).data('motivo');
         let observacion = $(this).data('observacion');
 
-        if (imagen) {
+        if (imagen && motivo) {
             $('#modalImagen').attr('src', 'data:image/jpeg;base64,' + imagen).show();
             $('#noImageMessage').hide();
+            $('#modalMotivo').text(motivo);
+            $('#modalObservacion').text(observacion || 'No especificado');
+            $('#detallesModal').modal('show');
         } else {
-            $('#modalImagen').hide();
-            $('#noImageMessage').show();
+            console.log('No hay suficiente información para mostrar detalles');
         }
-
-        $('#modalMotivo').text(motivo || 'No especificado');
-        $('#modalObservacion').text(observacion || 'No especificado');
     }
 
     function showErrorAlert(message) {

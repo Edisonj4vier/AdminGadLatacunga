@@ -10,18 +10,14 @@
 
     <div class="content-section">
         <div class="row mb-3">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <button class="btn btn-primary" id="sincronizar">Sincronizar</button>
             </div>
-            <div class="col-md-4">
-                <label for="rangoUnidades" class="form-label">Rango de unidades</label>
-                <input type="number" name="rango_unidades" id="rangoUnidades" class="form-control"
-                       value="{{ request('rango_unidades', 2) }}" min="0" step="0.1">
+            <div class="col-md-3">
+                <button class="btn btn-success" id="actualizarLecturas">Actualizar Lecturas</button>
             </div>
-            <div class="col-md-4">
-                <label for="fechaConsulta" class="form-label">Fecha de consulta</label>
-                <input type="date" name="fecha_consulta" id="fechaConsulta" class="form-control"
-                       value="{{ request('fecha_consulta', now()->toDateString()) }}">
+            <div class="col-md-3">
+                <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#configModal">Configuración</button>
             </div>
         </div>
 
@@ -59,6 +55,7 @@
     </div>
     @include('partials.editionLectura-modal')
     @include('partials.detalle-lectura')
+    @include('partials.config-modal')
 @endsection
 
 @push('styles')

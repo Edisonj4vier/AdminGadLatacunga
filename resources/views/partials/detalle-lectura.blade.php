@@ -15,7 +15,6 @@
                     <div class="col-md-6">
                         <h6>Información Adicional</h6>
                         <p><strong>Motivo:</strong> <span id="modalMotivo"></span></p>
-                        <p><strong>Observación:</strong> <span id="modalObservacion"></span></p>
                     </div>
                 </div>
             </div>
@@ -30,9 +29,8 @@
     <script>
         $(document).ready(function() {
             $('.show-details-btn').on('click', function() {
-                var imagen = $(this).data('imagen');
-                var motivo = $(this).data('motivo');
-                var observacion = $(this).data('observacion');
+                let imagen = $(this).data('imagen');
+                let motivo = $(this).data('motivo');
 
                 if (imagen) {
                     $('#modalImagen').attr('src', 'data:image/jpeg;base64,' + imagen).show();
@@ -43,7 +41,6 @@
                 }
 
                 $('#modalMotivo').text(motivo || 'No especificado');
-                $('#modalObservacion').text(observacion || 'No especificado');
             });
         });
     </script>

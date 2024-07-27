@@ -93,27 +93,6 @@ class ConsumoLecturaController extends Controller
         }
     }
 
-    public function sincronizarLecturas(Request $request): JsonResponse
-    {
-        try {
-            $response = ApiHelper::request('post', "/sincronizar_lecturas/{$request->login}", ['lecturas' => $request->lecturas]);
-
-            return response()->json($response->json());
-        } catch (\Exception $e) {
-            return $this->handleApiError($e);
-        }
-    }
-
-    public function copiarEvidencia(): JsonResponse
-    {
-        try {
-            $response = ApiHelper::request('post', '/copiar_evidencia');
-
-            return response()->json($response->json());
-        } catch (\Exception $e) {
-            return $this->handleApiError($e);
-        }
-    }
 
     public function actualizarLecturas(): JsonResponse
     {
