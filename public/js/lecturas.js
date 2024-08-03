@@ -102,7 +102,7 @@ $(document).ready(function() {
             // Determinar el estilo de la fila basado en las coordenadas
             let rowStyle = '';
             if (coordenadas && coordenadasCount[coordenadas] > 1) {
-                rowStyle = 'background-color: #FFF9C4;'; // Color pastel amarillo suave
+                rowStyle = 'background-color: #FFCCCB;'; // Color pastel amarillo suave
             }
 
             html += `
@@ -130,13 +130,13 @@ $(document).ready(function() {
             <td>${coordenadas}</td>
             <td>${lectura.observacion_movil || ''}</td>
             <td>
-                <button class="btn btn-sm btn-info show-details-btn"
-                        data-bs-toggle="modal"
-                        data-bs-target="#detallesModal"
-                        data-imagen="${imagen}"
-                        data-motivo="${motivo}"
-                        ${(!imagen || !motivo) ? 'disabled' : ''}>
-                    <i class="fas fa-info-circle"></i> Detalles
+                <button class="btn btn-sm ${(!imagen || !motivo) ? 'btn-secondary' : 'btn-info'} show-details-btn"
+                data-bs-toggle="modal"
+                data-bs-target="#detallesModal"
+                data-imagen="${imagen}"
+                data-motivo="${motivo}"
+                ${(!imagen || !motivo) ? 'disabled' : ''}>
+                <i class="fas fa-info-circle"></i> Detalles
                 </button>
             </td>
         </tr>
@@ -180,36 +180,102 @@ $(document).ready(function() {
         filterAndDisplayData(parseInt(page));
     }
 
+    function checkAbnormalConsumption(lecturas) {
+        return lecturas.some(lectura => {
+            const consumo = lectura.diferencia || 0;
+            const rangoSuperior = lectura.rango_superior || 0;
+            const rangoInferior = lectura.rango_inferior || 0;
+            return consumo > rangoSuperior || consumo < rangoInferior;
+        });
+    }
+
+    function checkDuplicateCoordinates(lecturas) {
+        const coordCounts = {};
+        lecturas.forEach(lectura => {
+            if (lectura.coordenadas) {
+                coordCounts[lectura.coordenadas] = (coordCounts[lectura.coordenadas] || 0) + 1;
+            }
+        });
+        return Object.values(coordCounts).some(count => count > 1);
+    }
+
     function handleSyncronization() {
+        const hasAbnormalConsumption = checkAbnormalConsumption(allData);
+        const hasDuplicateCoordinates = checkDuplicateCoordinates(allData);
+
+        let warningMessage = "";
+        if (hasAbnormalConsumption) {
+            warningMessage += "Se han detectado lecturas con consumo anormal (alto o bajo).\n";
+        }
+        if (hasDuplicateCoordinates) {
+            warningMessage += "Se han detectado coordenadas duplicadas.\n";
+        }
+
+        if (warningMessage) {
+            warningMessage += "\n¿Está seguro de que desea continuar con la actualización de lecturas?";
+        } else {
+            warningMessage = "Se actualizarán los datos de lecturas. ¿Desea continuar?";
+        }
+
         Swal.fire({
             title: '¿Está seguro?',
-            text: "Se sincronizarán los datos de lecturas",
+            text: warningMessage,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
-            confirmButtonText: 'Sí, sincronizar',
+            confirmButtonText: 'Sí, actualizar',
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: '/lecturas/sincronizar',
+                    url: '/lecturas/actualizar',
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
                     success: function(response) {
                         Swal.fire(
-                            'Sincronizado!',
-                            'Los datos han sido sincronizados.',
+                            'Actualizado!',
+                            'Los datos de lecturas han sido actualizados.',
                             'success'
-                        );
-                        loadInitialData(); // Change this line
+                        ).then(() => {
+                            copiarEvidencias();
+                        });
+                        loadInitialData();
                     },
                     error: function(xhr) {
-                        showErrorAlert('Error al sincronizar los datos: ' + xhr.responseJSON.error);
+                        showErrorAlert('Error al actualizar los datos de lecturas: ' + (xhr.responseJSON?.error || 'Error desconocido'));
                     }
                 });
+            }
+        });
+    }
+    function copiarEvidencias() {
+        Swal.fire({
+            title: 'Copiando evidencias',
+            text: 'Este proceso puede tardar unos momentos...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        $.ajax({
+            url: '/lecturas/copiar-evidencias',
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                Swal.fire(
+                    'Evidencias copiadas',
+                    'Las evidencias han sido copiadas exitosamente.',
+                    'success'
+                );
+            },
+            error: function(xhr) {
+                showErrorAlert('Error al copiar evidencias: ' + (xhr.responseJSON?.error || 'Error desconocido'));
             }
         });
     }

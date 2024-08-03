@@ -103,7 +103,6 @@ $(document).ready(function() {
                 reinicializarComponentes();
             },
             error: function(xhr) {
-                console.error('Error al actualizar la tabla:', xhr);
                 Swal.fire({
                     icon: 'error',
                     title: 'Error de actualización',
@@ -111,6 +110,7 @@ $(document).ready(function() {
                 });
             }
         });
+
     }
     // Manejo de la paginación
     $(document).on('click', '.pagination a', function(e) {
@@ -167,7 +167,6 @@ $(document).on('click', '#appLectorRutaTable .edit-btn', function() {
         url: `/app-lector-ruta/${username}/${rutaId}/edit`,
         method: 'GET',
         success: function(data) {
-            console.log('Datos recibidos:', data); // Depuración
             if (data.appLectorRuta && data.usuarios && data.rutas) {
                 const appLectorRuta = data.appLectorRuta;
                 const usuarios = data.usuarios;
@@ -200,7 +199,6 @@ $(document).on('click', '#appLectorRutaTable .edit-btn', function() {
                 $('#edit_new_id_ruta').val(selectedRutaId).trigger('change');
                 $('#edit_fecha').val(selectedFecha);
 
-                console.log('Fecha establecida en el modal:', selectedFecha); // Depuración
 
                 // Actualizar la acción del formulario
                 $('#editForm').attr('action', $('#editForm').attr('action').replace(':username', username).replace(':id_ruta', rutaId));
@@ -208,7 +206,6 @@ $(document).on('click', '#appLectorRutaTable .edit-btn', function() {
                 // Mostrar el modal
                 $('#editionModal').modal('show');
             } else {
-                console.error('Datos incompletos recibidos del servidor:', data);
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -217,7 +214,6 @@ $(document).on('click', '#appLectorRutaTable .edit-btn', function() {
             }
         },
         error: function(xhr) {
-            console.error('Error en la solicitud AJAX:', xhr);
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -346,7 +342,6 @@ $(document).on('click', '.delete-btn', function(e) {
 });
 
 function fetchData(page) {
-    console.log('Fetching data for page:', page);
     $.ajax({
         url: '/app-lector-ruta?page=' + page,
         method: 'GET',
@@ -395,6 +390,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+function reinicializarComponentes() {
+    $('.select2').select2({
+        placeholder: "Seleccione una opción",
+        allowClear: true,
+        width: '100%'
+    });
+    setTodayDate();
+}
 function getCSRFToken() {
     return $('meta[name="csrf-token"]').attr('content');
 }

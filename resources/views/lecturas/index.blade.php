@@ -10,14 +10,8 @@
 
     <div class="content-section">
         <div class="row mb-3">
-            <div class="col-md-3">
-                <button class="btn btn-primary" id="sincronizar">Sincronizar</button>
-            </div>
-            <div class="col-md-3">
-                <button class="btn btn-success" id="actualizarLecturas">Actualizar Lecturas</button>
-            </div>
-            <div class="col-md-3">
-                <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#configModal">Configuración</button>
+            <div class="col-md-4">
+                <button class="btn btn-primary" id="sincronizar">Sincronizar Lecturas</button>
             </div>
         </div>
 
@@ -83,6 +77,17 @@
         }
         .table-success {
             background-color: #d4edda !important;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: #fff;
+        }
+
+        .btn-secondary:hover, .btn-secondary:focus, .btn-secondary:active {
+            background-color: #5a6268;
+            border-color: #545b62;
+            color: #fff;
         }
     </style>
 @endpush

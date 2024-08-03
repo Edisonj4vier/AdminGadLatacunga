@@ -105,6 +105,17 @@ class ConsumoLecturaController extends Controller
         }
     }
 
+    public function copiarEvidencias(): JsonResponse
+    {
+        try {
+            $response = ApiHelper::request('post', '/lecturas/copiar-evidencias');
+
+            return response()->json($response->json());
+        } catch (\Exception $e) {
+            return $this->handleApiError($e);
+        }
+    }
+
     private function handleApiError(\Exception $e): JsonResponse
     {
         $statusCode = $e instanceof \Illuminate\Http\Client\RequestException

@@ -37,22 +37,16 @@ Route::middleware(['auth.token'])->group(function () {
     Route::delete('/app-lector-ruta/{username}/{id_ruta}', [AppLectorRutaController::class, 'destroy'])->name('app-lector-ruta.destroy');
 //------Lecturas
     Route::get('/lecturas', [ConsumoLecturaController::class, 'index'])->name('lecturas.index');
-    Route::post('/lecturas/sincronizar', [ConsumoLecturaController::class, 'actualizarAAPPLectura'])->name('lecturas.sincronizar');
+    Route::post('/lecturas/actualizar', [ConsumoLecturaController::class, 'actualizarLecturas']);
     Route::delete('/lecturas/{cuenta}', [ConsumoLecturaController::class, 'destroy'])->name('lecturas.destroy');
     Route::get('/lecturas/{cuenta}/edit', [ConsumoLecturaController::class, 'edit'])->name('lecturas.edit');
     Route::put('/lecturas/{cuenta}', [ConsumoLecturaController::class, 'update'])->name('lecturas.update');
     Route::get('/lecturas/{cuenta}', [ConsumoLecturaController::class, 'show']);
+    Route::post('/lecturas/copiar-evidencias', [ConsumoLecturaController::class, 'copiarEvidencias']);
     //----------Configuracion
 
 
 });
-/*
-Route::get('/lecturas/configuracion', [ConsumoLecturaController::class, 'configuracion'])->name('configuracion.index');
-Route::post('/lecturas/configuracion', [ConsumoLecturaController::class, 'guardarConfiguracion'])->name('guardarConfiguracion.index');
-
-*/
-
-
 // Ruta de fallback para manejar 404
 Route::fallback(function () {
     return response()->view('errors.404', [], 404);
