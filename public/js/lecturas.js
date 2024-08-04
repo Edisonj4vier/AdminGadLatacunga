@@ -15,6 +15,9 @@ $(document).ready(function() {
         $(document).on('click', '#lecturasTable .edit-btn', handleEdit);
         $(document).on('click', '#lecturasTable .delete-btn', handleDelete);
         $(document).on('click', '#lecturasTable .show-details-btn', handleShowDetails);
+        $('#crearLectura').click(handleCrearLectura);
+        $('#validarCuenta').click(handleValidarCuenta);
+        $('#formNuevaLectura').submit(handleGuardarNuevaLectura);
     }
 
     function setupSearch() {
@@ -198,7 +201,113 @@ $(document).ready(function() {
         });
         return Object.values(coordCounts).some(count => count > 1);
     }
+    function handleCrearLectura() {
+        // Reiniciar el formulario y mostrar el paso 1
+        $('#cuenta').val('');
+        $('#paso1').show();
+        $('#paso2').hide();
+        $('#nuevaLecturaModal').modal('show');
+    }
 
+    function handleValidarCuenta() {
+        const cuenta = $('#cuenta').val();
+
+        $.ajax({
+            url: `/obtener-datos-medidor/${cuenta}`,
+            method: 'GET',
+            success: function(response) {
+                // Si llegamos aquí, tenemos datos del medidor
+                $('#paso1').hide();
+                $('#paso2').show();
+
+                $('#medidor').val(response.medidor || '');
+                $('#clave').val(response.clave || '');
+                $('#abonado').val(response.abonado || '');
+                $('#direccion').val(response.direccion || '');
+                $('#coordenadas').val(response.coordenadas || '0.0.0,0.0.0,0.0.0');
+
+                // Limpiar campos de lectura y observación
+                $('#lectura').val('');
+                $('#observacion').val('');
+            },
+            error: function(xhr) {
+                let errorMessage = 'Error al obtener los datos del medidor. Por favor, intente de nuevo.';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Cuenta no válida',
+                    text: errorMessage
+                });
+                $('#cuenta').val('');  // Limpiar el campo de cuenta
+                $('#paso2').hide();    // Asegurarse de que el formulario no se muestre
+                $('#paso1').show();    // Mantener visible el paso de ingresar la cuenta
+            }
+        });
+    }
+    function handleGuardarNuevaLectura(e) {
+        e.preventDefault();
+
+        const lecturaData = {
+            cuenta: $('#cuenta').val(),
+            lectura: $('#lectura').val(),
+            observacion: $('#observacion').val()
+        };
+
+        // Validación de campos requeridos
+        if (!lecturaData.cuenta || !lecturaData.lectura || !lecturaData.observacion) {
+            showErrorAlert('Todos los campos son obligatorios.');
+            return;
+        }
+
+        $.ajax({
+            url: '/movil-lectura',
+            method: 'POST',
+            data: JSON.stringify(lecturaData),
+            contentType: 'application/json',
+            success: function(response) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Éxito',
+                    text: response.mensaje || 'La lectura se ha guardado correctamente.'
+                });
+                $('#nuevaLecturaModal').modal('hide');
+                loadInitialData(); // Recargar los datos después de crear una nueva lectura
+            },
+            error: function(xhr) {
+                let errorMessage = 'No se pudo guardar la lectura. Por favor, intente de nuevo.';
+                let errorType = 'ERROR_GENERAL';
+
+                if (xhr.responseJSON) {
+                    errorMessage = xhr.responseJSON.error || errorMessage;
+                    errorType = xhr.responseJSON.errorType || errorType;
+                }
+
+                switch(errorType) {
+                    case 'CUENTA_NO_EXISTE':
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Cuenta no encontrada',
+                            text: errorMessage
+                        });
+                        break;
+                    case 'LECTURA_YA_EXISTE':
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Lectura existente',
+                            text: errorMessage
+                        });
+                        break;
+                    case 'VALIDACION_FALLIDA':
+                        showErrorAlert('Por favor, verifique los datos ingresados: ' + errorMessage);
+                        break;
+                    default:
+                        showErrorAlert(errorMessage);
+                }
+            }
+        });
+    }
     function handleSyncronization() {
         const hasAbnormalConsumption = checkAbnormalConsumption(allData);
         const hasDuplicateCoordinates = checkDuplicateCoordinates(allData);

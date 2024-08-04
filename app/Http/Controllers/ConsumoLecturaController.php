@@ -66,7 +66,6 @@ class ConsumoLecturaController extends Controller
             return $this->handleApiError($e);
         }
     }
-
     public function update(Request $request, $cuenta): JsonResponse
     {
         try {
@@ -81,7 +80,36 @@ class ConsumoLecturaController extends Controller
             return $this->handleApiError($e);
         }
     }
+    public function obtenerDatosMedidor($cuenta): JsonResponse
+    {
+        try {
+            $responseMedidor = ApiHelper::request('get', "/obtener_datos_medidor/{$cuenta}");
 
+            if (!$responseMedidor->successful()) {
+                return response()->json([
+                    'error' => 'No se encontraron registros para la cuenta proporcionada.'
+                ], $responseMedidor->status());
+            }
+
+            $dataMedidor = $responseMedidor->json();
+
+            if (empty($dataMedidor)) {
+                return response()->json([
+                    'error' => 'No se encontraron datos del medidor para la cuenta proporcionada.'
+                ], 404);
+            }
+
+            return response()->json([
+                'medidor' => $dataMedidor['medidor'] ?? '',
+                'clave' => $dataMedidor['clave'] ?? '',
+                'abonado' => $dataMedidor['abonado'] ?? '',
+                'direccion' => $dataMedidor['direccion'] ?? '',
+                'coordenadas' => $dataMedidor['coordenadas'] ?? '0.0.0,0.0.0,0.0.0',
+            ]);
+        } catch (\Exception $e) {
+            return $this->handleApiError($e);
+        }
+    }
     public function destroy($cuenta): JsonResponse
     {
         try {
@@ -116,16 +144,68 @@ class ConsumoLecturaController extends Controller
         }
     }
 
+    public function crearLectura(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'cuenta' => 'required|string',
+                'lectura' => 'required|string',
+                'observacion' => 'required|string',
+            ]);
+
+            $data = $request->only(['cuenta', 'lectura', 'observacion']);
+
+            // Primero, verificamos si la cuenta existe
+            $cuentaResponse = ApiHelper::request('get', "/obtener_datos_medidor/{$data['cuenta']}");
+
+            if ($cuentaResponse->status() === 404) {
+                return response()->json([
+                    'error' => 'La cuenta proporcionada no existe en el sistema.',
+                    'errorType' => 'CUENTA_NO_EXISTE'
+                ], 404);
+            }
+
+            // Si la cuenta existe, procedemos a crear la lectura
+            $response = ApiHelper::request('post', '/movil-lectura', $data);
+
+            $responseData = $response->json();
+            $statusCode = $response->status();
+
+            // Manejar respuestas específicas del endpoint FastAPI
+            if ($statusCode === 400 && isset($responseData['detail'])) {
+                if (strpos($responseData['detail'], 'ya existe') !== false) {
+                    return response()->json([
+                        'error' => $responseData['detail'],
+                        'errorType' => 'LECTURA_YA_EXISTE'
+                    ], 400);
+                }
+            }
+
+            return response()->json($responseData, $statusCode);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'error' => $e->errors(),
+                'errorType' => 'VALIDACION_FALLIDA'
+            ], 422);
+        } catch (\Exception $e) {
+            return $this->handleApiError($e);
+        }
+    }
+
+
     private function handleApiError(\Exception $e): JsonResponse
     {
         $statusCode = $e instanceof \Illuminate\Http\Client\RequestException
             ? $e->response->status()
-            : ($e->getCode() ?: 500);
+            : 500;
 
         $message = $e instanceof \Illuminate\Http\Client\RequestException
-            ? $e->response->body()
+            ? $e->response->json('detail', 'Error desconocido')
             : $e->getMessage();
 
-        return response()->json(['error' => $message], $statusCode);
+        return response()->json([
+            'error' => $message,
+            'errorType' => 'ERROR_GENERAL'
+        ], $statusCode);
     }
 }

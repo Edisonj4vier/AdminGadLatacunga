@@ -10,8 +10,11 @@
 
     <div class="content-section">
         <div class="row mb-3">
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <button class="btn btn-primary" id="sincronizar">Sincronizar Lecturas</button>
+            </div>
+            <div class="col-md-6 text-end">
+                <button class="btn btn-success" id="crearLectura">Crear Nueva Lectura</button>
             </div>
         </div>
 
@@ -50,6 +53,7 @@
     @include('partials.editionLectura-modal')
     @include('partials.detalle-lectura')
     @include('partials.config-modal')
+    @include('partials.nuevaLectura-modal')
 @endsection
 
 @push('styles')
