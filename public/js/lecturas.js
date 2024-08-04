@@ -6,6 +6,7 @@ $(document).ready(function() {
     initializeEvents();
     setupSearch();
     loadInitialData();
+    loadSavedConfig();
 
     function initializeEvents() {
         $('#saveConfig').click(handleSaveConfig);
@@ -27,11 +28,33 @@ $(document).ready(function() {
         });
     }
     function handleSaveConfig() {
+        const rangoUnidades = $('#rangoUnidades').val();
+        const limitePromedio = $('#limitePromedio').val();
+        const fechaConsulta = $('#fechaConsulta').val();
+
+        // Guardar los valores en localStorage para persistencia
+        localStorage.setItem('rangoUnidades', rangoUnidades);
+        localStorage.setItem('limitePromedio', limitePromedio);
+        localStorage.setItem('fechaConsulta', fechaConsulta);
+
         loadInitialData();
         $('#configModal').modal('hide');
     }
+
+    // Función para cargar los valores guardados al iniciar
+    function loadSavedConfig() {
+        const savedRangoUnidades = localStorage.getItem('rangoUnidades');
+        const savedLimitePromedio = localStorage.getItem('limitePromedio');
+        const savedFechaConsulta = localStorage.getItem('fechaConsulta');
+
+        if (savedRangoUnidades) $('#rangoUnidades').val(savedRangoUnidades);
+        if (savedLimitePromedio) $('#limitePromedio').val(savedLimitePromedio);
+        if (savedFechaConsulta) $('#fechaConsulta').val(savedFechaConsulta);
+    }
+
     function loadInitialData() {
         const rangoUnidades = $('#rangoUnidades').val();
+        const limitePromedio = $('#limitePromedio').val();
         const fechaConsulta = $('#fechaConsulta').val();
 
         $.ajax({
@@ -39,6 +62,7 @@ $(document).ready(function() {
             method: 'GET',
             data: {
                 rango_unidades: rangoUnidades,
+                limite_promedio: limitePromedio,
                 fecha_consulta: fechaConsulta
             },
             success: function(response) {

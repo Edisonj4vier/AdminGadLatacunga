@@ -19,8 +19,9 @@ class ConsumoLecturaController extends Controller
 
             $response = ApiHelper::request('get', '/lecturas', [
                 'fecha_consulta' => $request->input('fecha_consulta'),
-                'limite_registros' => $perPage,
+                'limite_registros' => $request->input('limite_registros'),
                 'rango_unidades' => $request->input('rango_unidades', 2),
+                'limite_promedio' => $request->input('limite_promedio', 3),
             ]);
 
             $allData = $response->json();
