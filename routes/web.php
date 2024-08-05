@@ -44,7 +44,7 @@ Route::middleware(['auth.token'])->group(function () {
     Route::get('/lecturas/{cuenta}', [ConsumoLecturaController::class, 'show']);
     Route::post('/lecturas/copiar-evidencias', [ConsumoLecturaController::class, 'copiarEvidencias']);
     Route::post('/movil-lectura', [ConsumoLecturaController::class, 'crearLectura']);
-    Route::get('/obtener_datos_medidor/{cuenta}', [ConsumoLecturaController::class, 'obtenerDatosMedidor']);
+    Route::get('/obtener-datos-medidor/{cuenta}', [ConsumoLecturaController::class, 'obtenerDatosMedidor']);
 });
 // Ruta de fallback para manejar 404
 Route::fallback(function () {

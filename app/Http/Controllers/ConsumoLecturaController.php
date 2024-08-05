@@ -84,6 +84,20 @@ class ConsumoLecturaController extends Controller
     public function obtenerDatosMedidor($cuenta): JsonResponse
     {
         try {
+            // Primero, verificar si ya existe una lectura
+            $responseLectura = ApiHelper::request('get', "/lecturas/{$cuenta}");
+            $dataLectura = $responseLectura->json();
+
+            if (isset($dataLectura['lectura']) && $dataLectura['lectura'] !== null) {
+                // Ya existe una lectura
+                return response()->json([
+                    'error' => 'Esta cuenta ya tiene una lectura registrada.',
+                    'lectura_existente' => true,
+                    'lectura_actual' => $dataLectura['lectura']
+                ], 400);
+            }
+
+            // Si no existe lectura, obtener datos del medidor
             $responseMedidor = ApiHelper::request('get', "/obtener_datos_medidor/{$cuenta}");
 
             if (!$responseMedidor->successful()) {

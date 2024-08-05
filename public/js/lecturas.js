@@ -240,7 +240,7 @@ $(document).ready(function() {
             url: `/obtener-datos-medidor/${cuenta}`,
             method: 'GET',
             success: function(response) {
-                // Si llegamos aquí, tenemos datos del medidor
+                // Si llegamos aquí, tenemos datos del medidor y no hay lectura existente
                 $('#paso1').hide();
                 $('#paso2').show();
 
@@ -256,14 +256,23 @@ $(document).ready(function() {
             },
             error: function(xhr) {
                 let errorMessage = 'Error al obtener los datos del medidor. Por favor, intente de nuevo.';
-                if (xhr.responseJSON && xhr.responseJSON.error) {
+                let icon = 'error';
+                let title = 'Error';
+
+                if (xhr.status === 400 && xhr.responseJSON.lectura_existente) {
+                    errorMessage = `Esta cuenta ya tiene una lectura registrada. Lectura actual: ${xhr.responseJSON.lectura_actual}`;
+                    icon = 'warning';
+                    title = 'Lectura Existente';
+                } else if (xhr.responseJSON && xhr.responseJSON.error) {
                     errorMessage = xhr.responseJSON.error;
                 }
+
                 Swal.fire({
-                    icon: 'error',
-                    title: 'Cuenta no válida',
+                    icon: icon,
+                    title: title,
                     text: errorMessage
                 });
+
                 $('#cuenta').val('');  // Limpiar el campo de cuenta
                 $('#paso2').hide();    // Asegurarse de que el formulario no se muestre
                 $('#paso1').show();    // Mantener visible el paso de ingresar la cuenta
