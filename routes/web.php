@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\TestController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AppLectorRutaController;
 use App\Http\Controllers\AuthController;
@@ -45,7 +46,10 @@ Route::middleware(['auth.token'])->group(function () {
     Route::post('/lecturas/copiar-evidencias', [ConsumoLecturaController::class, 'copiarEvidencias']);
     Route::post('/movil-lectura', [ConsumoLecturaController::class, 'crearLectura']);
     Route::get('/obtener-datos-medidor/{cuenta}', [ConsumoLecturaController::class, 'obtenerDatosMedidor']);
+
+
 });
+
 // Ruta de fallback para manejar 404
 Route::fallback(function () {
     return response()->view('errors.404', [], 404);

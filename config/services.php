@@ -31,7 +31,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
     'api' => [
-        'url' => env('API_URL', 'http://localhost:8000'),
+        'url' => env('API_USE_REMOTE', false)
+            ? env('API_URL_REMOTE', 'http://54.176.159.133')
+            : env('API_URL_LOCAL', 'http://localhost:8000'),
+        'use_remote' => env('API_USE_REMOTE', false),
         'token' => env('API_TOKEN'),
     ],
 

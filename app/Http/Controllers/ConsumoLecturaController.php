@@ -142,18 +142,37 @@ class ConsumoLecturaController extends Controller
         try {
             $response = ApiHelper::request('post', '/actualizar_lecturas');
 
-            return response()->json($response->json());
+            if ($response->successful()) {
+                return response()->json([
+                    'mensaje' => 'Los datos de lecturas han sido actualizados.',
+                    'tabla_vaciada' => true
+                ]);
+            } else {
+                return response()->json([
+                    'error' => 'Error al actualizar los datos de lecturas.'
+                ], $response->status());
+            }
         } catch (\Exception $e) {
             return $this->handleApiError($e);
         }
     }
+
 
     public function copiarEvidencias(): JsonResponse
     {
         try {
             $response = ApiHelper::request('post', '/lecturas/copiar-evidencias');
 
-            return response()->json($response->json());
+            if ($response->successful()) {
+                return response()->json([
+                    'mensaje' => 'Las evidencias han sido copiadas exitosamente.',
+                    'tabla_vaciada' => true
+                ]);
+            } else {
+                return response()->json([
+                    'error' => 'Error al copiar evidencias.'
+                ], $response->status());
+            }
         } catch (\Exception $e) {
             return $this->handleApiError($e);
         }
@@ -206,9 +225,14 @@ class ConsumoLecturaController extends Controller
             return $this->handleApiError($e);
         }
     }
+    public function testApiConnection()
+    {
+        $result = ApiHelper::testConnection();
+        return response()->json($result);
+    }
 
 
-    private function handleApiError(\Exception $e): JsonResponse
+private function handleApiError(\Exception $e): JsonResponse
     {
         $statusCode = $e instanceof \Illuminate\Http\Client\RequestException
             ? $e->response->status()

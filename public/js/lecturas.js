@@ -110,6 +110,11 @@ $(document).ready(function() {
     }
 
     function updateTableContent(lecturas) {
+        if (lecturas.length === 0) {
+            $('#lecturasBody').html('<tr><td colspan="14" class="text-center">No hay datos disponibles. Las lecturas han sido sincronizadas y copiadas.</td></tr>');
+            return;
+        }
+
         let html = '';
         let coordenadasCount = {};
 
@@ -379,12 +384,15 @@ $(document).ready(function() {
                     success: function(response) {
                         Swal.fire(
                             'Actualizado!',
-                            'Los datos de lecturas han sido actualizados.',
+                            response.mensaje,
                             'success'
                         ).then(() => {
+                            if (response.tabla_vaciada) {
+                                allData = [];
+                                updateTableContent([]);
+                            }
                             copiarEvidencias();
                         });
-                        loadInitialData();
                     },
                     error: function(xhr) {
                         showErrorAlert('Error al actualizar los datos de lecturas: ' + (xhr.responseJSON?.error || 'Error desconocido'));
@@ -412,9 +420,14 @@ $(document).ready(function() {
             success: function(response) {
                 Swal.fire(
                     'Evidencias copiadas',
-                    'Las evidencias han sido copiadas exitosamente.',
+                    response.mensaje,
                     'success'
-                );
+                ).then(() => {
+                    if (response.tabla_vaciada) {
+                        allData = [];
+                        updateTableContent([]);
+                    }
+                });
             },
             error: function(xhr) {
                 showErrorAlert('Error al copiar evidencias: ' + (xhr.responseJSON?.error || 'Error desconocido'));
