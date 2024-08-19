@@ -46,17 +46,42 @@ class AppLectorRutaController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'username' => 'required',
-            'ruta_id' => 'required|integer',
-            'fecha' => 'required|date',
-        ]);
-
         try {
+            $validatedData = $request->validate([
+                'username' => 'required',
+                'ruta_id' => 'required|integer',
+                'fecha' => 'required|date',
+            ]);
+
+            $validationMessages = [];
+
+            // Verificar si el usuario ya tiene la ruta asignada
+            $existingAssignment = ApiHelper::request('get', "/lectorruta/{$validatedData['username']}/{$validatedData['ruta_id']}");
+            if ($existingAssignment->successful()) {
+                $validationMessages[] = 'El usuario ya tiene esta ruta asignada.';
+            }
+
+            // Verificar si la ruta ya está asignada a otro usuario
+            $allAssignments = ApiHelper::request('get', '/lectorruta')->json();
+            foreach ($allAssignments as $assignment) {
+                if ($assignment['id_ruta'] == $validatedData['ruta_id'] && $assignment['login_usuario'] != $validatedData['username']) {
+                    $validationMessages[] = 'La ruta ya está asignada a otro usuario.';
+                    break;
+                }
+            }
+
+            if (!empty($validationMessages)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se puede realizar la asignación.',
+                    'validationMessages' => $validationMessages
+                ], 422);
+            }
+
             $response = ApiHelper::request('post', '/asignarRuta/', [
-                'username' => $request->username,
-                'ruta_id' => $request->ruta_id,
-                'fecha' => Carbon::parse($request->fecha)->toDateString(),
+                'username' => $validatedData['username'],
+                'ruta_id' => $validatedData['ruta_id'],
+                'fecha' => Carbon::parse($validatedData['fecha'])->toDateString(),
             ]);
 
             $data = $response->json();
@@ -64,7 +89,7 @@ class AppLectorRutaController extends Controller
             if ($response->successful()) {
                 return response()->json([
                     'success' => true,
-                    'message' => $data['mensaje']
+                    'message' => $data['mensaje'] ?? 'Ruta asignada correctamente'
                 ]);
             } else {
                 return response()->json([
@@ -72,6 +97,12 @@ class AppLectorRutaController extends Controller
                     'message' => $data['detail'] ?? 'No se pudo asignar la ruta'
                 ], $response->status());
             }
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -133,17 +164,46 @@ class AppLectorRutaController extends Controller
 
     public function update(Request $request, $username, $id_ruta)
     {
-        $request->validate([
-            'new_username' => 'required',
-            'new_id_ruta' => 'required|integer',
-            'fecha' => 'required|date',
-        ]);
-
         try {
+            $validatedData = $request->validate([
+                'new_username' => 'required',
+                'new_id_ruta' => 'required|integer',
+                'fecha' => 'required|date',
+            ]);
+
+            $validationMessages = [];
+
+            // Verificar si el usuario ya tiene la ruta asignada
+            if ($validatedData['new_username'] != $username || $validatedData['new_id_ruta'] != $id_ruta) {
+                $existingAssignment = ApiHelper::request('get', "/lectorruta/{$validatedData['new_username']}/{$validatedData['new_id_ruta']}");
+                if ($existingAssignment->successful()) {
+                    $validationMessages[] = 'El usuario ya tiene esta ruta asignada.';
+                }
+            }
+
+            // Verificar si la ruta ya está asignada a otro usuario
+            $allAssignments = ApiHelper::request('get', '/lectorruta')->json();
+            foreach ($allAssignments as $assignment) {
+                if ($assignment['id_ruta'] == $validatedData['new_id_ruta'] &&
+                    $assignment['login_usuario'] != $validatedData['new_username'] &&
+                    ($assignment['login_usuario'] != $username || $assignment['id_ruta'] != $id_ruta)) {
+                    $validationMessages[] = 'La ruta ya está asignada a otro usuario.';
+                    break;
+                }
+            }
+
+            if (!empty($validationMessages)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se puede realizar la actualización.',
+                    'validationMessages' => $validationMessages
+                ], 422);
+            }
+
             $response = ApiHelper::request('put', "/lectorruta/{$username}/{$id_ruta}", [
-                'new_username' => $request->new_username,
-                'new_id_ruta' => $request->new_id_ruta,
-                'fecha' => Carbon::parse($request->fecha)->toDateString(),
+                'new_username' => $validatedData['new_username'],
+                'new_id_ruta' => $validatedData['new_id_ruta'],
+                'fecha' => Carbon::parse($validatedData['fecha'])->toDateString(),
             ]);
 
             if ($response->successful()) {
@@ -158,6 +218,12 @@ class AppLectorRutaController extends Controller
                     'message' => $response->json()['detail'] ?? 'No se pudo actualizar el lector-ruta'
                 ], $response->status());
             }
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

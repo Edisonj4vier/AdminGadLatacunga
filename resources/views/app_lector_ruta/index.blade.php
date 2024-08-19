@@ -26,7 +26,8 @@
                 </div>
                 <div class="col-md-3 mb-3">
                     <label for="fecha" class="form-label">Fecha de Asignación</label>
-                    <input type="date" class="form-control" id="fecha" name="fecha" required>
+                    <input type="date" class="form-control" id="fecha" name="fecha" required
+                           min="{{ date('Y-m-d') }}" max="{{ date('Y-m-d', strtotime('+1 day')) }}">
                 </div>
                 <div class="col-md-3 mb-3 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary btn-block">Agregar</button>

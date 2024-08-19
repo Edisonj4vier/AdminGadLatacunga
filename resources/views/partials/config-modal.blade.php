@@ -12,7 +12,7 @@
                            value="{{ request('rango_unidades', 2) }}" min="0" step="0.1">
                 </div>
                 <div class="mb-3">
-                    <label for="limitePromedio" class="form-label">Límite de promedio</label>
+                    <label for="limitePromedio" class="form-label">Numero de meses</label>
                     <input type="number" name="limite_promedio" id="limitePromedio" class="form-control"
                            value="{{ request('limite_promedio', 3) }}" min="1" step="1">
                 </div>

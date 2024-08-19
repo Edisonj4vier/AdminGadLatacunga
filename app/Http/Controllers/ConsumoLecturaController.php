@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\ApiHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -17,14 +18,27 @@ class ConsumoLecturaController extends Controller
             $page = $request->input('page', 1);
             $perPage = $request->input('per_page', 15);
 
+            // Usar el formato 'Y-m-d' que es compatible con el backend FastAPI
+            $fechaConsulta = Carbon::now()->format('Y-m-d');
+
             $response = ApiHelper::request('get', '/lecturas', [
-                'fecha_consulta' => $request->input('fecha_consulta'),
+                'fecha_consulta' => $fechaConsulta,
                 'limite_registros' => $request->input('limite_registros'),
-                'rango_unidades' => $request->input('rango_unidades', 2),
-                'limite_promedio' => $request->input('limite_promedio', 3),
             ]);
 
+            if (!$response->successful()) {
+                return response()->json([
+                    'error' => 'Error en la solicitud al API: ' . $response->body()
+                ], $response->status());
+            }
+
             $allData = $response->json();
+
+            if (empty($allData)) {
+                return response()->json([
+                    'error' => 'No se encontraron registros.'
+                ], 404);
+            }
 
             $collection = Collection::make($allData);
 
@@ -50,7 +64,7 @@ class ConsumoLecturaController extends Controller
                 ]);
             }
 
-            $fechaActual = now()->format('d/m/Y');
+            $fechaActual = Carbon::now()->format('Y-m-d');
             return view('lecturas.index', compact('paginator', 'fechaActual'));
         } catch (\Exception $e) {
             return $this->handleApiError($e);
@@ -224,11 +238,6 @@ class ConsumoLecturaController extends Controller
         } catch (\Exception $e) {
             return $this->handleApiError($e);
         }
-    }
-    public function testApiConnection()
-    {
-        $result = ApiHelper::testConnection();
-        return response()->json($result);
     }
 
 

@@ -1,32 +1,38 @@
 @extends('layouts.appLogin')
 
 @section('content')
-
     <div class="container">
         <div class="row justify-content-center align-items-center">
             <div class="col-md-6">
                 <div class="content-wrapper">
                     <h2 class="text-center mb-4">Iniciar Sesión</h2>
+
+                    @if ($errors->has('login'))
+                        <div class="alert alert-danger">
+                            {{ $errors->first('login') }}
+                        </div>
+                    @endif
+
                     <form method="POST" action="{{ route('login') }}">
                         @csrf
                         <div class="mb-3">
-                            <label for="username" class="form-label">Usuario</label>
+                            <label for="nombre_usuario" class="form-label">Usuario</label>
                             <input id="nombre_usuario" type="text" class="form-control @error('nombre_usuario') is-invalid @enderror" name="nombre_usuario" value="{{ old('nombre_usuario') }}" required autocomplete="nombre_usuario" autofocus>
 
                             @error('nombre_usuario')
                             <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
+                                <strong>{{ $message }}</strong>
+                            </span>
                             @enderror
                         </div>
                         <div class="mb-3">
-                            <label for="password" class="form-label">Contraseña</label>
+                            <label for="contrasena" class="form-label">Contraseña</label>
                             <input id="contrasena" type="password" class="form-control @error('contrasena') is-invalid @enderror" name="contrasena" required autocomplete="current-password">
 
                             @error('contrasena')
                             <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
+                                <strong>{{ $message }}</strong>
+                            </span>
                             @enderror
                         </div>
                         <div class="d-grid gap-2">
@@ -38,5 +44,4 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-
 @endSection

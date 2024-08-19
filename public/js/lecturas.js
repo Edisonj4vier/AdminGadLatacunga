@@ -30,12 +30,10 @@ $(document).ready(function() {
     function handleSaveConfig() {
         const rangoUnidades = $('#rangoUnidades').val();
         const limitePromedio = $('#limitePromedio').val();
-        const fechaConsulta = $('#fechaConsulta').val();
 
         // Guardar los valores en localStorage para persistencia
         localStorage.setItem('rangoUnidades', rangoUnidades);
         localStorage.setItem('limitePromedio', limitePromedio);
-        localStorage.setItem('fechaConsulta', fechaConsulta);
 
         loadInitialData();
         $('#configModal').modal('hide');
@@ -45,25 +43,21 @@ $(document).ready(function() {
     function loadSavedConfig() {
         const savedRangoUnidades = localStorage.getItem('rangoUnidades');
         const savedLimitePromedio = localStorage.getItem('limitePromedio');
-        const savedFechaConsulta = localStorage.getItem('fechaConsulta');
 
         if (savedRangoUnidades) $('#rangoUnidades').val(savedRangoUnidades);
         if (savedLimitePromedio) $('#limitePromedio').val(savedLimitePromedio);
-        if (savedFechaConsulta) $('#fechaConsulta').val(savedFechaConsulta);
     }
 
     function loadInitialData() {
-        const rangoUnidades = $('#rangoUnidades').val();
-        const limitePromedio = $('#limitePromedio').val();
-        const fechaConsulta = $('#fechaConsulta').val();
+        const fechaConsulta = formatDate(new Date());
+        const limiteRegistros = $('#limiteRegistros').val();
 
         $.ajax({
             url: '/lecturas',
             method: 'GET',
             data: {
-                rango_unidades: rangoUnidades,
-                limite_promedio: limitePromedio,
-                fecha_consulta: fechaConsulta
+                fecha_consulta: fechaConsulta,
+                limite_registros: limiteRegistros
             },
             success: function(response) {
                 if (response.error) {
@@ -74,9 +68,23 @@ $(document).ready(function() {
                 }
             },
             error: function(xhr, status, error) {
-                showErrorAlert('Error al cargar los datos. Por favor, intenta de nuevo.');
+                if (xhr.status === 404) {
+                    $('#lecturasBody').html('<tr><td colspan="14" class="text-center">No se encontraron registros.</td></tr>');
+                } else {
+                    let errorMessage = 'Error al cargar los datos.';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage += ' ' + xhr.responseJSON.error;
+                    }
+                    showErrorAlert(errorMessage);
+                }
             }
         });
+    }
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
 
     function filterAndDisplayData(page = 1) {

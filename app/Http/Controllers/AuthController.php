@@ -36,17 +36,22 @@ class AuthController extends Controller
                 Session::put('token_type', $data['token_type']);
                 return redirect()->route('app-lector-ruta.index')->with('success', 'Inicio de sesión exitoso');
             } else {
-                return back()->withErrors(['error' => 'Credenciales incorrectas']);
+                return back()->withInput()->withErrors(['login' => 'Credenciales incorrectas']);
             }
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al conectar con el servidor: ' . $e->getMessage()]);
+            return back()->withInput()->withErrors(['login' => 'Error al conectar con el servidor: ' . $e->getMessage()]);
         }
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
         Session::forget(['access_token', 'username', 'token_type']);
-        return redirect()->route('login')->with('success', 'Sesión cerrada');
+
+        if ($request->ajax()) {
+            return response()->json(['message' => 'Sesión cerrada exitosamente']);
+        }
+
+        return redirect()->route('login')->with('swal_success', 'Sesión cerrada exitosamente');
     }
 
     public function getUser()
