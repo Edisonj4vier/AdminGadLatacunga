@@ -46,7 +46,9 @@ Route::middleware(['auth.token'])->group(function () {
     Route::post('/lecturas/copiar-evidencias', [ConsumoLecturaController::class, 'copiarEvidencias']);
     Route::post('/movil-lectura', [ConsumoLecturaController::class, 'crearLectura']);
     Route::get('/obtener-datos-medidor/{cuenta}', [ConsumoLecturaController::class, 'obtenerDatosMedidor']);
-
+//------Parametros
+    Route::post('/parametros-consumo', [ConsumoLecturaController::class, 'actualizarParametrosConsumo']);
+    Route::get('/parametros-consumo', [ConsumoLecturaController::class, 'obtenerParametrosConsumo']);
 
 });
 

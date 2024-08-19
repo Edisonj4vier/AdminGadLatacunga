@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Helpers\ApiHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Validator;
 
 class ConsumoLecturaController extends Controller
 {
@@ -16,12 +18,11 @@ class ConsumoLecturaController extends Controller
         try {
             $page = $request->input('page', 1);
             $perPage = $request->input('per_page', 15);
+            $fechaConsulta = $request->input('fecha_consulta', now()->toDateString());
 
             $response = ApiHelper::request('get', '/lecturas', [
-                'fecha_consulta' => $request->input('fecha_consulta'),
+                'fecha_consulta' => $fechaConsulta,
                 'limite_registros' => $request->input('limite_registros'),
-                'rango_unidades' => $request->input('rango_unidades', 2),
-                'limite_promedio' => $request->input('limite_promedio', 3),
             ]);
 
             $allData = $response->json();
@@ -50,13 +51,12 @@ class ConsumoLecturaController extends Controller
                 ]);
             }
 
-            $fechaActual = now()->format('d/m/Y');
-            return view('lecturas.index', compact('paginator', 'fechaActual'));
+            $parametrosConsumo = $this->obtenerParametrosConsumo()->getData(true);
+            return view('lecturas.index', compact('paginator', 'fechaConsulta', 'parametrosConsumo'));
         } catch (\Exception $e) {
             return $this->handleApiError($e);
         }
     }
-
     public function show($cuenta): JsonResponse
     {
         try {
@@ -81,6 +81,50 @@ class ConsumoLecturaController extends Controller
             return $this->handleApiError($e);
         }
     }
+    public function actualizarParametrosConsumo(Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'rango_unidades' => 'required|numeric|gt:0',
+                'limite_promedio' => 'required|integer|gt:0',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['error' => $validator->errors()], 422);
+            }
+
+            $queryParams = http_build_query([
+                'rango_unidades' => $request->input('rango_unidades'),
+                'limite_promedio' => $request->input('limite_promedio'),
+            ]);
+
+            $response = ApiHelper::request('post', "/parametros-consumo?{$queryParams}");
+
+            if ($response->successful()) {
+                return response()->json(['message' => 'Parámetros actualizados correctamente']);
+            } else {
+                $errorContent = $response->json();
+                Log::error('Error en la respuesta del API', ['error' => $errorContent]);
+
+                return response()->json(['error' => $errorContent], $response->status());
+            }
+        } catch (\Exception $e) {
+            Log::error('Excepción en actualizarParametrosConsumo', ['exception' => $e->getMessage()]);
+            return response()->json(['error' => 'Error interno del servidor: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function obtenerParametrosConsumo(): JsonResponse
+    {
+        try {
+            $response = ApiHelper::request('get', '/parametros-consumo');
+
+            return response()->json($response->json());
+        } catch (\Exception $e) {
+            return $this->handleApiError($e);
+        }
+    }
+
     public function obtenerDatosMedidor($cuenta): JsonResponse
     {
         try {
@@ -225,12 +269,6 @@ class ConsumoLecturaController extends Controller
             return $this->handleApiError($e);
         }
     }
-    public function testApiConnection()
-    {
-        $result = ApiHelper::testConnection();
-        return response()->json($result);
-    }
-
 
 private function handleApiError(\Exception $e): JsonResponse
     {

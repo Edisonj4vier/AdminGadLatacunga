@@ -20,7 +20,6 @@ $(document).ready(function() {
         $('#validarCuenta').click(handleValidarCuenta);
         $('#formNuevaLectura').submit(handleGuardarNuevaLectura);
     }
-
     function setupSearch() {
         $('#searchInput').on('input', function() {
             clearTimeout(typingTimer);
@@ -37,10 +36,43 @@ $(document).ready(function() {
         localStorage.setItem('limitePromedio', limitePromedio);
         localStorage.setItem('fechaConsulta', fechaConsulta);
 
-        loadInitialData();
-        $('#configModal').modal('hide');
-    }
+        // Actualizar los parámetros de consumo en el servidor
+        $.ajax({
+            url: '/parametros-consumo',
+            method: 'POST',
+            data: {
+                rango_unidades: parseFloat(rangoUnidades),
+                limite_promedio: parseInt(limitePromedio)
+            },
+            success: function(response) {
+                Swal.fire('Éxito', 'Configuración guardada correctamente', 'success');
+                loadInitialData();
+                $('#configModal').modal('hide');
+            },
+            error: function(xhr) {
+                console.log('Error response:', xhr.responseJSON); // Para depuración
+                let errorMessage = 'Error al guardar la configuración:\n';
 
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    if (Array.isArray(xhr.responseJSON.error)) {
+                        xhr.responseJSON.error.forEach(err => {
+                            errorMessage += `- ${err.msg} (${err.loc.join('.')})\n`;
+                        });
+                    } else if (typeof xhr.responseJSON.error === 'string') {
+                        errorMessage += xhr.responseJSON.error;
+                    } else {
+                        errorMessage += JSON.stringify(xhr.responseJSON.error);
+                    }
+                } else if (xhr.responseText) {
+                    errorMessage += xhr.responseText;
+                } else {
+                    errorMessage += 'Error desconocido';
+                }
+
+                showErrorAlert(errorMessage);
+            }
+        });
+    }
     // Función para cargar los valores guardados al iniciar
     function loadSavedConfig() {
         const savedRangoUnidades = localStorage.getItem('rangoUnidades');
@@ -50,19 +82,28 @@ $(document).ready(function() {
         if (savedRangoUnidades) $('#rangoUnidades').val(savedRangoUnidades);
         if (savedLimitePromedio) $('#limitePromedio').val(savedLimitePromedio);
         if (savedFechaConsulta) $('#fechaConsulta').val(savedFechaConsulta);
+
+        // Cargar los parámetros de consumo del servidor
+        $.ajax({
+            url: '/parametros-consumo',
+            method: 'GET',
+            success: function(response) {
+                $('#rangoUnidades').val(response.rango_unidades);
+                $('#limitePromedio').val(response.limite_promedio);
+            },
+            error: function(xhr) {
+                console.error('Error al cargar los parámetros de consumo:', xhr.responseJSON?.error || 'Error desconocido');
+            }
+        });
     }
 
     function loadInitialData() {
-        const rangoUnidades = $('#rangoUnidades').val();
-        const limitePromedio = $('#limitePromedio').val();
         const fechaConsulta = $('#fechaConsulta').val();
 
         $.ajax({
             url: '/lecturas',
             method: 'GET',
             data: {
-                rango_unidades: rangoUnidades,
-                limite_promedio: limitePromedio,
                 fecha_consulta: fechaConsulta
             },
             success: function(response) {
@@ -346,6 +387,7 @@ $(document).ready(function() {
             }
         });
     }
+
     function handleSyncronization() {
         const hasAbnormalConsumption = checkAbnormalConsumption(allData);
         const hasDuplicateCoordinates = checkDuplicateCoordinates(allData);
@@ -541,7 +583,10 @@ $(document).ready(function() {
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: message
+            text: message,
+            customClass: {
+                container: 'my-swal'
+            }
         });
     }
 
